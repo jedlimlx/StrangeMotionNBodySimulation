@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
+#include <cmath>
+#include <random>
 
 using namespace std;
 
@@ -20,6 +21,7 @@ int import_coeffs(const string& filename, int terms, long double coeffs[]){
         getline(infile, word);
         coeffs[i] = stod(word);
     }
+    infile.close();
     return 0;
 }
 
@@ -47,6 +49,32 @@ int import_initial_data(const string& filename, int length, double positions[]){
         getline(infile, word);
         positions[i] = stod(word);
     }
+    infile.close();
+    return 0;
+}
+
+//initialize positions of particles
+int generate_initial_positions(const double initial_data[], long double* positions[], int particles, bool**mesh, int initial_data_length){
+    default_random_engine generator(particles);
+    uniform_real_distribution<long double> angle_distribution(0, 2 * M_PI);
+    uniform_int_distribution<int> index_distribution(0,  initial_data_length - 1);
+
+    long double r, theta, x, y;
+    int index;
+    for(int i = 0; i < particles; i++){
+        index = index_distribution(generator);
+        r = initial_data[index];
+        theta = angle_distribution(generator);
+        x = r * cos(theta);
+        y = r * sin(theta);
+        while(mesh[1500 + ((int) (x / 75E-6))][1500 + ((int) (y / 75E-6))]) {
+            theta = angle_distribution(generator);
+            x = r * cos(theta);
+            y = r * sin(theta);
+        }
+        positions[i][0] = x;
+        positions[i][1] = y;
+    }
     return 0;
 }
 
@@ -56,23 +84,50 @@ int main() {
     const int INITIAL_DATA_LENGTH = 750357;
     const string INITIAL_DATA_FILENAME = "initial_data.csv";
     const int PARTICLES = 20000;
+    const int MESH_FINENESS = 3000;
 
-    long double coeffs[TERMS];
+    auto *coeffs = (long double*) malloc(TERMS * sizeof(long double));
     //import polynomial coefficients
     if(import_coeffs(FORCE_COEFFS_FILENAME, TERMS, coeffs)){
         return 1;
     }
 
-    double initial_data[INITIAL_DATA_LENGTH];
+    auto *initial_data = (double*) malloc(INITIAL_DATA_LENGTH * sizeof(double));
     //import initial data
     if(import_initial_data(INITIAL_DATA_FILENAME, INITIAL_DATA_LENGTH, initial_data)){
         return 1;
     }
 
-    //randomly generate initial positions
-    long double positions[PARTICLES][2];
-    long double initial_r[PARTICLES];
+    //initialize 2d array for positions
+    auto** positions = (long double**) malloc(PARTICLES * sizeof(long double*));
+    for(int i = 0; i < PARTICLES; i++){
+        positions[i] = (long double*) malloc(2 * sizeof(long double));
+    }
+    //initialize 2d array for collision detection
+    auto** mesh = (bool**) malloc(MESH_FINENESS * sizeof(bool*));
+    for(int i = 0; i < MESH_FINENESS; i++){
+        mesh[i] = (bool*) malloc(MESH_FINENESS * sizeof(bool));
+    }
+    //initialize to false
+    for (int i = 0; i < MESH_FINENESS; i++) {
+        for (int j = 0; j < MESH_FINENESS; j++) {
+            mesh[i][j] = false;
+        }
+    }
+    //initialize positions
+    generate_initial_positions(initial_data, positions, PARTICLES, mesh, INITIAL_DATA_LENGTH);
+    free(initial_data); // free up memory since its not needed any more
 
+    ofstream outfile;
+    outfile.open("cppinitial.csv");
+    for(int i = 0; i < PARTICLES; i++){
+        outfile << sqrt(pow(positions[i][0],2) + pow(positions[i][1] , 2)) << ",";
+    }
+    outfile.close();
+
+    free(coeffs);
+    free(positions);
+    free(mesh);
     return 0;
 }
 
