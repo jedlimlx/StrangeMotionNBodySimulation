@@ -1,3 +1,3 @@
 "E:\CLion 2021.3\bin\cmake\win\bin\cmake.exe" -E rm -f CMakeFiles\SDESolver.dir/objects.a
 "E:\CLion 2021.3\bin\mingw\bin\ar.exe" qc CMakeFiles\SDESolver.dir/objects.a @CMakeFiles\SDESolver.dir\objects1.rsp
-"E:\CLion 2021.3\bin\mingw\bin\g++.exe" -g -Wl,--whole-archive CMakeFiles\SDESolver.dir/objects.a -Wl,--no-whole-archive -o SDESolver.exe -Wl,--out-implib,libSDESolver.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\SDESolver.dir\linklibs.rsp
+"E:\CLion 2021.3\bin\mingw\bin\g++.exe" -g -O3 -Wl,--whole-archive CMakeFiles\SDESolver.dir/objects.a -Wl,--no-whole-archive -o SDESolver.exe -Wl,--out-implib,libSDESolver.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\SDESolver.dir\linklibs.rsp

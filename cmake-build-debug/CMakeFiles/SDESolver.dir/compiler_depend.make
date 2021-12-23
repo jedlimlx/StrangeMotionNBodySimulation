@@ -154,7 +154,22 @@ CMakeFiles/SDESolver.dir/main.cpp.obj: ../main.cpp \
   E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/random.tcc \
   E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/numeric \
   E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_numeric.h \
-  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bit
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bit \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/thread \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_thread.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/tuple \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/utility \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_relops.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/array \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/uses_allocator.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/invoke.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/refwrap.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/unique_ptr.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/this_thread_sleep.h \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/chrono \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ratio \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ctime \
+  E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/parse_numbers.h
 
 
 ../main.cpp:
@@ -359,6 +374,8 @@ E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/x86_64-
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/locale_classes.h:
 
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/unique_ptr.h:
+
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/string:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/allocator.h:
@@ -376,6 +393,8 @@ E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/cx
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_function.h:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/backward/binders.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/parse_numbers.h:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/basic_string.tcc:
 
@@ -455,6 +474,8 @@ E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/random:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/vector:
 
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/thread:
+
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_uninitialized.h:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_vector.h:
@@ -464,3 +485,27 @@ E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/st
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/x86_64-w64-mingw32/bits/opt_random.h:
 
 E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_numeric.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_thread.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/tuple:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/utility:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_relops.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/array:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/uses_allocator.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/invoke.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/refwrap.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/this_thread_sleep.h:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/chrono:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ratio:
+
+E:/CLion\ 2021.3/bin/mingw/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ctime:
