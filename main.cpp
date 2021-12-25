@@ -80,37 +80,53 @@ int generate_initial_positions(const double initial_data[], long double* positio
     return 0;
 }
 
+//rng time
+long double get_random(long double random_coeff, long double dt){
+    static default_random_engine generator(time(NULL));
+    normal_distribution<long double> distribution(0, sqrt(dt));
+    return random_coeff * distribution(generator);
+}
+
 //split up the loop for sde solving
 void loop_for_particles(int start, int end, long double* positions[], long double* velocities[], bool* mesh[], long double coeffs[], int terms,
                         long double cd, long double random_coeff, long double mass, long double dt){
-    long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f;
-    default_random_engine generator(start);
-    normal_distribution<long double> distribution(0, sqrt(dt));
+    long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y;
+//    if(start == 0) {
+//        cout << get_random(random_coeff, dt) << endl;
+//    }
     for (int i = start; i < end; ++i) {
         x_original = positions[i][0];
         y_original = positions[i][1];
         v_x_i = velocities[i][0];
         v_y_i = velocities[i][1];
-        x = x_original + v_x_i * dt;
-        y = y_original + v_x_i * dt;
         mesh[1500 + (int) (x_original / 75E-6)][1500 + (int) (y_original / 75E-6)] = false;
         //collision detection
-        if(x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09 || mesh[1500 + (int) (x / 75E-6)][1500 + (int) (y / 75E-6)]){
+        r = sqrt(pow(x_original, 2) + pow(y_original, 2));
+
+        force_val = force(r, coeffs, terms);
+        rand_x = get_random(random_coeff, dt);
+        rand_y = get_random(random_coeff, dt);
+        v_x_f = v_x_i + (force_val * (x_original / r) * dt -
+                         cd * v_x_i * dt +
+                         0.1 *rand_x) / mass;
+        v_y_f = v_y_i + (force_val * (y_original / r) * dt -
+                         cd * v_y_i * dt +
+                         0.1 * rand_y) / mass;
+//        if (i == 0) {
+//            cout << y << ", " << (force(r, coeffs, terms) * (y / r) * dt -
+//                                  cd * v_y_i * dt +
+//                                  0.001 * get_random(random_coeff, dt)) / mass << ", " << v_y_i << endl;
+//        }
+        velocities[i][0] = v_x_f;
+        velocities[i][1] = v_y_f;
+        x = x_original + v_x_f * dt;
+        y = y_original + v_y_f * dt;
+        if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09 ||
+            mesh[1500 + (int) (x / 75E-6)][1500 + (int) (y / 75E-6)]) {
             velocities[i][0] = 0;
             velocities[i][1] = 0;
             mesh[1500 + (int) (x_original / 75E-6)][1500 + (int) (y_original / 75E-6)] = true;
-        }else{
-            r = sqrt(pow(x, 2) + pow(y, 2));
-
-            v_x_f = v_x_i + (-1 * force(r, coeffs, terms) * (x / r) * dt -
-                                 cd * v_x_i * dt +
-                                 random_coeff * distribution(generator)) / mass;
-            v_y_f = v_y_i + (-1 * force(r, coeffs, terms) * (y / r) * dt -
-                                 cd * v_y_i * dt +
-                                 random_coeff * distribution(generator)) / mass;
-
-            velocities[i][0] = v_x_f;
-            velocities[i][1] = v_y_f;
+        } else {
             positions[i][0] = x;
             positions[i][1] = y;
             mesh[1500 + (int) (x / 75E-6)][1500 + (int) (y / 75E-6)] = true;
@@ -129,12 +145,6 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
     ofstream outfile;
     outfile.open("position.csv");
 
-    default_random_engine generator(particles);
-    normal_distribution<long double> distribution(0, sqrt(dt));
-    for(int i = 0; i < 100; i ++){
-        cout << distribution(generator) << endl;
-    }
-
     float length = ((float) particles) / n_threads; //number of particles for each thread to process
     for (int t = 0; t < N; ++t) {
         thread threads[n_threads];
@@ -144,13 +154,14 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
         for(auto& thread: threads){
             thread.join();
         }
-        outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2)) << endl;
+        outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2))<< endl;
+
         if(t % 1000 == 0){
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
         }
     }
     outfile.close();
-    return 1;
+    return 0;
 }
 
 
@@ -159,10 +170,10 @@ int main() {
     const int TERMS = 26; //number of terms in force polynomial
     const int INITIAL_DATA_LENGTH = 750357; //number of initial r values
     const string INITIAL_DATA_FILENAME = "initial_data.csv"; //initial r values
-    const int PARTICLES = 1; //number of particles to simulate
+    const int PARTICLES = 20000; //number of particles to simulate
     const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
     const int N = 100000; //number of timesteps
-    const int N_THREADS = 1;
+    const int N_THREADS = 6;
 
     const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
     const long double RADIUS = 75e-6; //radius of particle
@@ -217,7 +228,7 @@ int main() {
         velocities[i][0] = 0;
         velocities[i][1] = 0;
     }
-
+    cout << force(0.0653622022084068693415, coeffs, TERMS) << endl;
     solve_sde(positions, velocities, N, PARTICLES, T_START, T_END, coeffs, TERMS, mesh, CD, RANDOM_COEFFICIENT, MASS, N_THREADS);
 
     ofstream outfile;
