@@ -55,6 +55,8 @@ int import_initial_data(const string& filename, int length, double positions[]){
     return 0;
 }
 
+
+
 //initialize positions of particles
 int generate_initial_positions(const double initial_data[], long double* positions[], int particles, bool**mesh, int initial_data_length){
     default_random_engine generator(particles);
@@ -108,10 +110,10 @@ void loop_for_particles(int start, int end, long double* positions[], long doubl
         rand_y = get_random(random_coeff, dt);
         v_x_f = v_x_i + (force_val * (x_original / r) * dt -
                          cd * v_x_i * dt +
-                         0.1 *rand_x) / mass;
+                         rand_x) / mass;
         v_y_f = v_y_i + (force_val * (y_original / r) * dt -
                          cd * v_y_i * dt +
-                         0.1 * rand_y) / mass;
+                         rand_y) / mass;
 //        if (i == 0) {
 //            cout << y << ", " << (force(r, coeffs, terms) * (y / r) * dt -
 //                                  cd * v_y_i * dt +
@@ -168,15 +170,15 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
 int main() {
     const string FORCE_COEFFS_FILENAME = "forcecoeffs.csv"; //coefficients for force polynomial
     const int TERMS = 26; //number of terms in force polynomial
-    const int INITIAL_DATA_LENGTH = 750357; //number of initial r values
-    const string INITIAL_DATA_FILENAME = "initial_data.csv"; //initial r values
+    const int INITIAL_DATA_LENGTH = 609700; //number of initial r values
+    const string INITIAL_DATA_FILENAME = "initial_positions.csv"; //initial r values
     const int PARTICLES = 20000; //number of particles to simulate
     const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
     const int N = 100000; //number of timesteps
-    const int N_THREADS = 6;
+    const int N_THREADS = 6 ;
 
     const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
-    const long double RADIUS = 75e-6; //radius of particle
+    const long double RADIUS = 480e-6; //radius of particle
     const long double DENSITY = 8960; //density of particles
     const long double MASS = (4.0/3) * DENSITY * M_PI * pow(RADIUS, 3);
     const long double CD = 6 * M_PI * VISCOSITY * RADIUS; //stokes drag
@@ -228,7 +230,7 @@ int main() {
         velocities[i][0] = 0;
         velocities[i][1] = 0;
     }
-    cout << force(0.0653622022084068693415, coeffs, TERMS) << endl;
+
     solve_sde(positions, velocities, N, PARTICLES, T_START, T_END, coeffs, TERMS, mesh, CD, RANDOM_COEFFICIENT, MASS, N_THREADS);
 
     ofstream outfile;
