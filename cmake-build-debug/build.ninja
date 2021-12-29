@@ -74,7 +74,7 @@ build cmake_object_order_depends_target_SDESolver: phony || CMakeFiles/SDESolver
 
 build CMakeFiles/SDESolver.dir/main.cpp.o: CXX_COMPILER__SDESolver_Debug /Users/zimingqiu/CLionProjects/SDESolver/main.cpp || cmake_object_order_depends_target_SDESolver
   DEP_FILE = CMakeFiles/SDESolver.dir/main.cpp.o.d
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -std=gnu++14
+  FLAGS = -g -O3 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -std=gnu++14
   OBJECT_DIR = CMakeFiles/SDESolver.dir
   OBJECT_FILE_DIR = CMakeFiles/SDESolver.dir
   TARGET_COMPILE_PDB = CMakeFiles/SDESolver.dir/
@@ -89,7 +89,7 @@ build CMakeFiles/SDESolver.dir/main.cpp.o: CXX_COMPILER__SDESolver_Debug /Users/
 # Link the executable SDESolver
 
 build SDESolver: CXX_EXECUTABLE_LINKER__SDESolver_Debug CMakeFiles/SDESolver.dir/main.cpp.o
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk
+  FLAGS = -g -O3 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk
   OBJECT_DIR = CMakeFiles/SDESolver.dir
   POST_BUILD = :
   PRE_LINK = :

@@ -13,7 +13,7 @@ int import_coeffs(const string& filename, int terms, long double coeffs[]){
     infile.open(filename);
     //error checking
     if(! infile.is_open()){
-        printf("Failed to open file");
+        cout << "Failed to open filename: " << filename << endl;
         return 1;
     }
 
@@ -42,7 +42,7 @@ int import_initial_data(const string& filename, int length, double positions[]){
     infile.open(filename);
     //error checking
     if(! infile.is_open()){
-        cout << "Failed to open file" << endl;
+        cout << "Failed to open file brr" << endl;
         return 1;
     }
     //read in the data
@@ -58,8 +58,8 @@ int import_initial_data(const string& filename, int length, double positions[]){
 
 
 //initialize positions of particles
-int generate_initial_positions(const double initial_data[], long double* positions[], int particles, bool**mesh, int initial_data_length){
-    default_random_engine generator(particles);
+int generate_initial_positions(const double initial_data[], long double* positions[], int particles, bool**mesh, int initial_data_length, long double r_particles){
+    default_random_engine generator(time(NULL));
     uniform_real_distribution<long double> angle_distribution(0, 2 * M_PI);
     uniform_int_distribution<int> index_distribution(0,  initial_data_length - 1);
 
@@ -71,7 +71,7 @@ int generate_initial_positions(const double initial_data[], long double* positio
         theta = angle_distribution(generator);
         x = r * cos(theta);
         y = r * sin(theta);
-        while(mesh[1500 + ((int) (x / 75E-6))][1500 + ((int) (y / 75E-6))]) {
+        while(mesh[1500 + ((int) (x / r_particles))][1500 + ((int) (y / r_particles))]) {
             theta = angle_distribution(generator);
             x = r * cos(theta);
             y = r * sin(theta);
@@ -91,7 +91,7 @@ long double get_random(long double random_coeff, long double dt){
 
 //split up the loop for sde solving
 void loop_for_particles(int start, int end, long double* positions[], long double* velocities[], bool* mesh[], long double coeffs[], int terms,
-                        long double cd, long double random_coeff, long double mass, long double dt){
+                        long double cd, long double random_coeff, long double mass, long double dt, long double r_particles){
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y;
 //    if(start == 0) {
 //        cout << get_random(random_coeff, dt) << endl;
@@ -101,7 +101,7 @@ void loop_for_particles(int start, int end, long double* positions[], long doubl
         y_original = positions[i][1];
         v_x_i = velocities[i][0];
         v_y_i = velocities[i][1];
-        mesh[1500 + (int) (x_original / 75E-6)][1500 + (int) (y_original / 75E-6)] = false;
+        mesh[1500 + (int) (x_original / r_particles)][1500 + (int) (y_original / r_particles)] = false;
         //collision detection
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
 
@@ -124,21 +124,21 @@ void loop_for_particles(int start, int end, long double* positions[], long doubl
         x = x_original + v_x_f * dt;
         y = y_original + v_y_f * dt;
         if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09 ||
-            mesh[1500 + (int) (x / 75E-6)][1500 + (int) (y / 75E-6)]) {
+            mesh[1500 + (int) (x / r_particles)][1500 + (int) (y / r_particles)]) {
             velocities[i][0] = 0;
             velocities[i][1] = 0;
-            mesh[1500 + (int) (x_original / 75E-6)][1500 + (int) (y_original / 75E-6)] = true;
+            mesh[1500 + (int) (x_original / r_particles)][1500 + (int) (y_original / r_particles)] = true;
         } else {
             positions[i][0] = x;
             positions[i][1] = y;
-            mesh[1500 + (int) (x / 75E-6)][1500 + (int) (y / 75E-6)] = true;
+            mesh[1500 + (int) (x / r_particles)][1500 + (int) (y / r_particles)] = true;
         }
     }
 }
 
 //euler's method
 int solve_sde(long double* positions[], long double* velocities[], int N, int particles,long double t_start, long double t_end, long double coeffs[] , int terms, bool* mesh[],
-              long double cd, long double random_coeff, long double mass, int n_threads){
+              long double cd, long double random_coeff, long double mass, int n_threads, long double r_particles){
 
     long double dt = (t_end - t_start)/N;
 
@@ -151,16 +151,16 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
     for (int t = 0; t < N; ++t) {
         thread threads[n_threads];
         for(int i = 0; i < n_threads; i++){
-            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), positions, velocities, mesh, coeffs, terms, cd, random_coeff, mass, dt);
+            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), positions, velocities, mesh, coeffs, terms, cd, random_coeff, mass, dt, r_particles);
         }
         for(auto& thread: threads){
             thread.join();
         }
         outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2))<< endl;
-
-        if(t % 1000 == 0){
-            cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
-        }
+//
+//        if(t % 1000 == 0){
+//            cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
+//        }
     }
     outfile.close();
     return 0;
@@ -171,16 +171,16 @@ int main() {
     const string FORCE_COEFFS_FILENAME = "forcecoeffs.csv"; //coefficients for force polynomial
     const int TERMS = 26; //number of terms in force polynomial
     const int INITIAL_DATA_LENGTH = 609700; //number of initial r values
-    const string INITIAL_DATA_FILENAME = "initial_positions.csv"; //initial r values
-    const int PARTICLES = 20000; //number of particles to simulate
+    const string INITIAL_DATA_FILENAME = "initial_data.csv"; //initial r values
+    const int PARTICLES = 200; //number of particles to simulate
     const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
     const int N = 100000; //number of timesteps
-    const int N_THREADS = 6 ;
+    const int N_THREADS = 6;
 
     const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
-    const long double RADIUS = 480e-6; //radius of particle
+    const long double RADIUS = 600e-6; //radius of particle
     const long double DENSITY = 8960; //density of particles
-    const long double MASS = (4.0/3) * DENSITY * M_PI * pow(RADIUS, 3);
+    const long double MASS = (4.0 / 3) * DENSITY * M_PI * pow(RADIUS, 3);
     const long double CD = 6 * M_PI * VISCOSITY * RADIUS; //stokes drag
     const long double TEMPERATURE = 28 + 273.15; //temperature
     const long double KB = 1.38064852e-23; //boltzmann's constant
@@ -189,62 +189,70 @@ int main() {
     const int T_END = 1000;
 
 
-    auto *coeffs = (long double*) malloc(TERMS * sizeof(long double));
+    auto *coeffs = (long double *) malloc(TERMS * sizeof(long double));
     //import polynomial coefficients
-    if(import_coeffs(FORCE_COEFFS_FILENAME, TERMS, coeffs)){
+    if (import_coeffs(FORCE_COEFFS_FILENAME, TERMS, coeffs)) {
         return 1;
     }
-    auto *initial_data = (double*) malloc(INITIAL_DATA_LENGTH * sizeof(double));
+    auto *initial_data = (double *) malloc(INITIAL_DATA_LENGTH * sizeof(double));
     //import initial data
-    if(import_initial_data(INITIAL_DATA_FILENAME, INITIAL_DATA_LENGTH, initial_data)){
+    if (import_initial_data(INITIAL_DATA_FILENAME, INITIAL_DATA_LENGTH, initial_data)) {
         return 1;
     }
 
     //initialize 2d array for positions
-    auto** positions = (long double**) malloc(PARTICLES * sizeof(long double*));
-    for(int i = 0; i < PARTICLES; i++){
-        positions[i] = (long double*) malloc(2 * sizeof(long double));
+    auto **positions = (long double **) malloc(PARTICLES * sizeof(long double *));
+    for (int i = 0; i < PARTICLES; i++) {
+        positions[i] = (long double *) malloc(2 * sizeof(long double));
     }
     //initialize 2d array for collision detection
-    auto** mesh = (bool**) malloc(MESH_FINENESS * sizeof(bool*));
-    for(int i = 0; i < MESH_FINENESS; i++){
-        mesh[i] = (bool*) malloc(MESH_FINENESS * sizeof(bool));
-    }
-    //initialize to false
+    auto **mesh = (bool **) malloc(MESH_FINENESS * sizeof(bool *));
     for (int i = 0; i < MESH_FINENESS; i++) {
-        for (int j = 0; j < MESH_FINENESS; j++) {
-            mesh[i][j] = false;
-        }
+        mesh[i] = (bool *) malloc(MESH_FINENESS * sizeof(bool));
     }
-    //initialize positions
-    generate_initial_positions(initial_data, positions, PARTICLES, mesh, INITIAL_DATA_LENGTH);
-    free(initial_data); // free up memory since its not needed any more
 
     //allocate memory for initial velocities array
-    auto** velocities = (long double**) malloc(PARTICLES * sizeof(long double*));
-    for(int i = 0; i < PARTICLES; i++){
-        velocities[i] = (long double*) malloc(2 * sizeof(long double));
-    }
-    //set initial velocities to 0
+    auto **velocities = (long double **) malloc(PARTICLES * sizeof(long double *));
     for (int i = 0; i < PARTICLES; i++) {
-        velocities[i][0] = 0;
-        velocities[i][1] = 0;
+        velocities[i] = (long double *) malloc(2 * sizeof(long double));
     }
-
-    solve_sde(positions, velocities, N, PARTICLES, T_START, T_END, coeffs, TERMS, mesh, CD, RANDOM_COEFFICIENT, MASS, N_THREADS);
 
     ofstream outfile;
     outfile.open("final_positions.csv");
-    for (int i = 0; i < PARTICLES; ++i) {
-        outfile << positions[i][0] << "," << positions[i][1] << endl;
+    for (int k = 0; k < 15; k++) {
+
+        //initialize to false
+        for (int i = 0; i < MESH_FINENESS; i++) {
+            for (int j = 0; j < MESH_FINENESS; j++) {
+                mesh[i][j] = false;
+            }
+        }
+
+        //initialize positions
+        generate_initial_positions(initial_data, positions, PARTICLES, mesh, INITIAL_DATA_LENGTH, RADIUS);
+
+        //set initial velocities to 0
+        for (int i = 0; i < PARTICLES; i++) {
+            velocities[i][0] = 0;
+            velocities[i][1] = 0;
+        }
+
+        solve_sde(positions, velocities, N, PARTICLES, T_START, T_END, coeffs, TERMS, mesh, CD, RANDOM_COEFFICIENT,
+                  MASS,
+                  N_THREADS, RADIUS);
+
+        for (int i = 0; i < PARTICLES; ++i) {
+            outfile << positions[i][0] << "," << positions[i][1] << endl;
+        }
+        cout << k << endl;
+
     }
-
     outfile.close();
-
     free(velocities);
     free(coeffs);
     free(positions);
     free(mesh);
+    free(initial_data);
     return 0;
 }
 
