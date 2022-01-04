@@ -170,7 +170,7 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
 int main() {
     const string FORCE_COEFFS_FILENAME = "forcecoeffs.csv"; //coefficients for force polynomial
     const int TERMS = 26; //number of terms in force polynomial
-    const int INITIAL_DATA_LENGTH = 609700; //number of initial r values
+    const int INITIAL_DATA_LENGTH = 399460; //number of initial r values
     const string INITIAL_DATA_FILENAME = "initial_positions.csv"; //initial r values
     const int PARTICLES = 20000; //number of particles to simulate
     const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
@@ -178,8 +178,8 @@ int main() {
     const int N_THREADS = 6 ;
 
     const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
-    const long double RADIUS = 480e-6; //radius of particle
-    const long double DENSITY = 8960; //density of particles
+    const long double RADIUS = 48e-6; //radius of particle
+    const long double DENSITY = 2260; //density of particles
     const long double MASS = (4.0/3) * DENSITY * M_PI * pow(RADIUS, 3);
     const long double CD = 6 * M_PI * VISCOSITY * RADIUS; //stokes drag
     const long double TEMPERATURE = 28 + 273.15; //temperature
