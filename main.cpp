@@ -170,16 +170,16 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
 int main() {
     const string FORCE_COEFFS_FILENAME = "forcecoeffs.csv"; //coefficients for force polynomial
     const int TERMS = 26; //number of terms in force polynomial
-    const int INITIAL_DATA_LENGTH = 609700; //number of initial r values
+    const int INITIAL_DATA_LENGTH = 399460; //number of initial r values
     const string INITIAL_DATA_FILENAME = "initial_data.csv"; //initial r values
-    const int PARTICLES = 200; //number of particles to simulate
+    const int PARTICLES = 70; //number of particles to simulate
     const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
     const int N = 100000; //number of timesteps
     const int N_THREADS = 6;
 
     const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
-    const long double RADIUS = 600e-6; //radius of particle
-    const long double DENSITY = 8960; //density of particles
+    const long double RADIUS = 2e-3; //radius of particle
+    const long double DENSITY = 2260; //density of particles
     const long double MASS = (4.0 / 3) * DENSITY * M_PI * pow(RADIUS, 3);
     const long double CD = 6 * M_PI * VISCOSITY * RADIUS; //stokes drag
     const long double TEMPERATURE = 28 + 273.15; //temperature
@@ -219,8 +219,8 @@ int main() {
 
     ofstream outfile;
     outfile.open("final_positions.csv");
-    for (int k = 0; k < 15; k++) {
 
+    for (int k = 0; k < 15; k++) {
         //initialize to false
         for (int i = 0; i < MESH_FINENESS; i++) {
             for (int j = 0; j < MESH_FINENESS; j++) {
@@ -245,7 +245,6 @@ int main() {
             outfile << positions[i][0] << "," << positions[i][1] << endl;
         }
         cout << k << endl;
-
     }
     outfile.close();
     free(velocities);
