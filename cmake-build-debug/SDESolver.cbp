@@ -82,6 +82,15 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="C:/Users/qiuzi/CLionProjects/SDESolver/TreeNode.cpp">
+			<Option target="SDESolver"/>
+		</Unit>
+		<Unit filename="C:/Users/qiuzi/CLionProjects/SDESolver/TreeNode.h">
+			<Option target="SDESolver"/>
+		</Unit>
+		<Unit filename="C:/Users/qiuzi/CLionProjects/SDESolver/constants.h">
+			<Option target="SDESolver"/>
+		</Unit>
 		<Unit filename="C:/Users/qiuzi/CLionProjects/SDESolver/main.cpp">
 			<Option target="SDESolver"/>
 		</Unit>

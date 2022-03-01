@@ -4,6 +4,7 @@
 #include <random>
 #include <thread>
 #include <chrono>
+#include "sde_solver_constants.h"
 
 using namespace std;
 
@@ -137,21 +138,21 @@ void loop_for_particles(int start, int end, long double* positions[], long doubl
 }
 
 //euler's method
-int solve_sde(long double* positions[], long double* velocities[], int N, int particles,long double t_start, long double t_end, long double coeffs[] , int terms, bool* mesh[],
-              long double cd, long double random_coeff, long double mass, int n_threads){
-
-    long double dt = (t_end - t_start)/N;
+int solve_sde(long double* positions[], long double* velocities[], int particles, long double coeffs[] , bool* mesh[],
+long double cd, long double random_coeff, long double mass, int n_threads){
+    long double dt = (T_END - T_START)/N;
 
     auto start = chrono::high_resolution_clock::now();
 
     ofstream outfile;
     outfile.open("position.csv");
 
+
     float length = ((float) particles) / n_threads; //number of particles for each thread to process
     for (int t = 0; t < N; ++t) {
         thread threads[n_threads];
         for(int i = 0; i < n_threads; i++){
-            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), positions, velocities, mesh, coeffs, terms, cd, random_coeff, mass, dt);
+            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), positions, velocities, mesh, coeffs, TERMS, cd, random_coeff, mass, dt);
         }
         for(auto& thread: threads){
             thread.join();
@@ -168,27 +169,6 @@ int solve_sde(long double* positions[], long double* velocities[], int N, int pa
 
 
 int main() {
-    const string FORCE_COEFFS_FILENAME = "forcecoeffs.csv"; //coefficients for force polynomial
-    const int TERMS = 26; //number of terms in force polynomial
-    const int INITIAL_DATA_LENGTH = 399460; //number of initial r values
-    const string INITIAL_DATA_FILENAME = "initial_positions.csv"; //initial r values
-    const int PARTICLES = 20000; //number of particles to simulate
-    const int MESH_FINENESS = 3000; //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
-    const int N = 100000; //number of timesteps
-    const int N_THREADS = 6 ;
-
-    const long double VISCOSITY = 0.0010518; //dynamic viscosity of water
-    const long double RADIUS = 48e-6; //radius of particle
-    const long double DENSITY = 2260; //density of particles
-    const long double MASS = (4.0/3) * DENSITY * M_PI * pow(RADIUS, 3);
-    const long double CD = 6 * M_PI * VISCOSITY * RADIUS; //stokes drag
-    const long double TEMPERATURE = 28 + 273.15; //temperature
-    const long double KB = 1.38064852e-23; //boltzmann's constant
-    const long double RANDOM_COEFFICIENT = sqrt(2 * KB * TEMPERATURE / CD); //coefficient in front of the dW term
-    const int T_START = 0;
-    const int T_END = 1000;
-
-
     auto *coeffs = (long double*) malloc(TERMS * sizeof(long double));
     //import polynomial coefficients
     if(import_coeffs(FORCE_COEFFS_FILENAME, TERMS, coeffs)){
@@ -231,7 +211,7 @@ int main() {
         velocities[i][1] = 0;
     }
 
-    solve_sde(positions, velocities, N, PARTICLES, T_START, T_END, coeffs, TERMS, mesh, CD, RANDOM_COEFFICIENT, MASS, N_THREADS);
+    solve_sde(positions, velocities, PARTICLES, coeffs, mesh, CD, RANDOM_COEFFICIENT, MASS, N_THREADS);
 
     ofstream outfile;
     outfile.open("final_positions.csv");

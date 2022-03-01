@@ -128,6 +128,30 @@ SDESolver/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\SDESolver.dir\build.make CMakeFiles/SDESolver.dir/build
 .PHONY : SDESolver/fast
 
+TreeNode.obj: TreeNode.cpp.obj
+.PHONY : TreeNode.obj
+
+# target to build an object file
+TreeNode.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\SDESolver.dir\build.make CMakeFiles/SDESolver.dir/TreeNode.cpp.obj
+.PHONY : TreeNode.cpp.obj
+
+TreeNode.i: TreeNode.cpp.i
+.PHONY : TreeNode.i
+
+# target to preprocess a source file
+TreeNode.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\SDESolver.dir\build.make CMakeFiles/SDESolver.dir/TreeNode.cpp.i
+.PHONY : TreeNode.cpp.i
+
+TreeNode.s: TreeNode.cpp.s
+.PHONY : TreeNode.s
+
+# target to generate assembly for a file
+TreeNode.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\SDESolver.dir\build.make CMakeFiles/SDESolver.dir/TreeNode.cpp.s
+.PHONY : TreeNode.cpp.s
+
 main.obj: main.cpp.obj
 .PHONY : main.obj
 
@@ -161,6 +185,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... SDESolver
+	@echo ... TreeNode.obj
+	@echo ... TreeNode.i
+	@echo ... TreeNode.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s
