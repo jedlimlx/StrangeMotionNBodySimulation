@@ -1,4 +1,4 @@
-"E:\CLion 2021.3\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - MinGW Makefiles" C:\Users\qiuzi\CLionProjects\SDESolver
+/snap/clion/180/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G "CodeBlocks - Unix Makefiles" /home/meow/CLionProjects/SDESolver
 -- Configuring done
 -- Generating done
--- Build files have been written to: C:/Users/qiuzi/CLionProjects/SDESolver/cmake-build-debug
+-- Build files have been written to: /home/meow/CLionProjects/SDESolver/cmake-build-debug

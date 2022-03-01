@@ -22,7 +22,11 @@
 #define   TEMPERATURE  28 + 273.15 //temperature
 #define   KB  1.38064852e-23 //boltzmann's #defineant
 #define   RANDOM_COEFFICIENT  sqrt(2 * KB * TEMPERATURE / CD) //coefficient in front of the dW term
-#define  T_START  0
-#define  T_END  1000
+#define   T_START  0
+#define   T_END  1000
+#define CAPL_LENGTH 368.3751861591355
+#define MAX_ANGLE 0.1
+#define COEFF 166.649
+#define QK 0.000553862
 
 #endif //SDESOLVER_SDE_SOLVER_CONSTANTS_H

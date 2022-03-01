@@ -169,6 +169,8 @@ long double cd, long double random_coeff, long double mass, int n_threads){
 
 
 int main() {
+    cout << "hello world" << endl;
+    return 0;
     auto *coeffs = (long double*) malloc(TERMS * sizeof(long double));
     //import polynomial coefficients
     if(import_coeffs(FORCE_COEFFS_FILENAME, TERMS, coeffs)){
