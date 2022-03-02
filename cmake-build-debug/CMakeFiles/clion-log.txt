@@ -1,4 +1,5 @@
-/snap/clion/180/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G "CodeBlocks - Unix Makefiles" /home/meow/CLionProjects/SDESolver
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++ -G Ninja /Users/zimingqiu/CLionProjects/SDESolver
+
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/meow/CLionProjects/SDESolver/cmake-build-debug
+-- Build files have been written to: /Users/zimingqiu/CLionProjects/SDESolver/cmake-build-debug

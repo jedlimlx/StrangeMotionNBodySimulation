@@ -34,9 +34,6 @@ public:
     void insert(particle* p); //recursive
 
     void calculate_force(particle* source, long double* force);
-
-    void resolve_collisions(particle* p);
-
 };
 
 

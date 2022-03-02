@@ -84,7 +84,7 @@ void TreeNode::calculate_force(particle *source, long double *force) {
             children[i].calculate_force(source, force);
         }
     }
-    long double f = COEFF * n_particles * QK * QK * boost::math::tr1::cyl_bessel_k(0, r * CAPL_LENGTH) / r;
+    long double f = COEFF * n_particles * QK * QK * boost::math::tr1::cyl_bessel_k(0.0, r * CAPL_LENGTH) / r;
     force[0] += f * (x_com - source->x);
     force[1] += f * (y_com - source->y);
 }
