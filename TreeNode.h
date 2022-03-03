@@ -20,7 +20,7 @@ struct particle{
 
 class TreeNode {
 public:
-    std::vector<TreeNode> children; // direct children of this cell
+    std::vector<TreeNode> *children; // direct children of this cell TODO use array
     int n_particles; // number of particles in this cell (recursive)
     std::vector<particle*> particles; // all particles in this cell (recursive)
     long double x_start; // bottom left
@@ -37,6 +37,8 @@ public:
     void calculate_force(particle *source, long double* force);
 
     void clear();
+
+    ~TreeNode();
 };
 
 long double eval_interp(long double **interp, long double point);

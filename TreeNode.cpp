@@ -2,11 +2,13 @@
 // Created by qiuzi on 3/1/2022.
 //
 #include "TreeNode.h"
+#include <iostream>
 long double eval_interp(long double **interp, long double point);
 
 //using namespace std;
 TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp) {
-    children.reserve(4);
+    children = new std::vector<TreeNode>;
+    children->reserve(4);
     this->x_start = x_start;
     this->y_start = y_start;
     this->size = size;
@@ -24,51 +26,53 @@ void TreeNode::insert(particle* p) {
     //resolve collisions
     long double vx_ave = 0;
     long double vy_ave = 0;
-    if(size < 2 * SDESOLVER_RADIUS){
-        for(int i = 0; i < n_particles; i++){
+    if (size < 2 * SDESOLVER_RADIUS) {
+        for (int i = 0; i < n_particles; i++) {
             vx_ave += particles[i]->vx;
             vy_ave += particles[i]->vy;
         }
-        for(int i = 0; i < n_particles; i++){
+        for (int i = 0; i < n_particles; i++) {
             particles[i]->vx = vx_ave / n_particles;
             particles[i]->vy = vy_ave / n_particles;
         }
     }
     // terminal node
-    if(n_particles == 1) {
+    if (n_particles == 1) {
         return;
         // generate children
-    }else if(n_particles == 2){
-        children.emplace_back(x_start, y_start, size / 2, interp);
-        children.emplace_back(x_start + size / 2, y_start, size / 2, interp);
-        children.emplace_back(x_start, y_start + size / 2, size / 2, interp);
-        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
-        for (int i = 0 ; i < 2; i++){
-            if(particles[i]->x < x_start + size / 2){
-                if(particles[i]->y < y_start + size / 2){
-                    children[0].insert(particles[i]);
-                }else{
+    } else if (n_particles == 2) {
+        children->emplace_back(x_start, y_start, size / 2, interp);
+        children->emplace_back(x_start + size / 2, y_start, size / 2, interp);
+        children->emplace_back(x_start, y_start + size / 2, size / 2, interp);
+        children->emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
+        for (int i = 0; i < 2; i++) {
+            if (particles[i]->x < x_start + size / 2) {
+                if (particles[i]->y < y_start + size / 2) {
+                    children.insert(particles[i]);
+                } else {
                     children[2].insert(particles[i]);
                 }
-            }else{
-                if(particles[i]->y < y_start + size / 2){
+            } else {
+                if (particles[i]->y < y_start + size / 2) {
                     children[1].insert(particles[i]);
-                }else{
+                } else {
                     children[3].insert(particles[i]);
                 }
             }
         }
-    }if(p->x < x_start + size / 2){
-        if(p->y < y_start + size / 2){
-            children[0].insert(p);
+    } else {
+        if (p->x < x_start + size / 2) {
+            if (p->y < y_start + size / 2) {
+                children[0].insert(p);
+            } else {
+                children[2].insert(p);
+            }
         }else{
-            children[2].insert(p);
-        }
-    }else{
-        if(p->y < y_start + size / 2){
-            children[1].insert(p);
-        }else{
-            children[3].insert(p);
+            if (p->y < y_start + size / 2) {
+                children[1].insert(p);
+            } else {
+                children[3].insert(p);
+            }
         }
     }
 }
@@ -89,6 +93,10 @@ void TreeNode::clear() {
     children.clear();
     particles.clear();
     n_particles = 0;
+}
+
+TreeNode::~TreeNode() {
+    delete children;
 }
 
 #define MAX_VALUE (-0.000123193)
