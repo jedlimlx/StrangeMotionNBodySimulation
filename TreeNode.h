@@ -7,6 +7,8 @@
 #ifndef SDESOLVER_TREENODE_H
 #define SDESOLVER_TREENODE_H
 #include "sde_solver_constants.h"
+#include <memory>
+
 
 struct particle{
     long double x;
@@ -32,9 +34,9 @@ public:
 
     TreeNode(long double x_start, long double y_start, long double size, long double** interp);
 
-    void insert(particle* p); //recursive
+    void insert_particle(particle* p); //recursive
 
-    void calculate_force(particle *source, long double* force);
+    void calculate_force(particle* source, long double* force);
 
     void clear();
 };

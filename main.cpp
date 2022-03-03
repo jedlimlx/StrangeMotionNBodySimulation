@@ -93,7 +93,7 @@ long double get_random(){
 }
 
 //split up the loop for sde solving
-void loop_for_particles(int start, int end, vector<particle*> particles, long double* coeffs, TreeNode base){
+void loop_for_particles(int start, int end, particle** particles, long double* coeffs, TreeNode base){
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y, *gravity;
 //    if(start == 0) {
 //        cout << get_random(random_coeff, dt) << endl;
@@ -139,26 +139,24 @@ void loop_for_particles(int start, int end, vector<particle*> particles, long do
 }
 
 //euler's method
-vector<particle*> solve_sde(long double* positions[], long double coeffs[], long double** interp){
+struct particle** solve_sde(long double* positions[], long double coeffs[], long double** interp){
     auto start = chrono::high_resolution_clock::now();
 
     ofstream outfile;
     outfile.open("position.csv");
 
     TreeNode base(-0.05, -0.05, 0.1, interp);
-    struct particle *p;
-    vector<particle*> particles;
-    cout << SDESOLVER_PARTICLES << endl;
+    struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
-        p = new struct particle(positions[i][0], positions[i][1]);
-        particles.push_back(p);
+        particles[i] = new struct particle(positions[i][0], positions[i][1]);
     }
     float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
     for (int t = 0; t < SDESOLVER_N; ++t) {
         base.clear();
+//        cout << particles[248]->x << ", " << particles[248]->y << endl << particles[249]->x << ", " << particles[249]->y << endl;
         for(int i = 0; i < SDESOLVER_PARTICLES; i++){
-            cout << i << endl;
-            base.insert(particles[i]);
+            cout << particles[i]->x << ", " << particles[i]->y << ", " << i <<endl;
+            base.insert_particle(particles[i]);
         }
         thread threads[SDESOLVER_N_THREADS];
         for(int i = 0; i < SDESOLVER_N_THREADS; i++){
@@ -211,12 +209,15 @@ long double** gen_lin_interp(long double **data,unsigned n){
             **coeff;
     unsigned int i;
     coeff = (long double**) malloc(3*sizeof(long double *));
-    coeff[0] = (long double*) malloc(n*sizeof(long double *)); // b
-    coeff[1] = (long double*) malloc(n*sizeof(long double *)); // a (bx+a linear interp)
-    coeff[2] = (long double*) malloc(n*sizeof(long double *)); // the boundary
-    for(i=0;i<n-1;++i)coeff[1][i]=(y[i+1]-y[i])/(x[i+1]-x[i]);
-    for(i=0;i<n-1;++i)coeff[0][i]=y[i+1]-coeff[1][i]*x[i+1];
-    for(i=0;i<n;++i)coeff[2][i]=x[i];
+    coeff[0] = (long double*) malloc(n*sizeof(long double)); // b
+    coeff[1] = (long double*) malloc(n*sizeof(long double)); // a (bx+a linear interp)
+    coeff[2] = (long double*) malloc(n*sizeof(long double)); // the boundary
+    for(i=0;i<n-1;++i)
+        coeff[1][i]=(y[i+1]-y[i])/(x[i+1]-x[i]);
+    for(i=0;i<n-1;++i)
+        coeff[0][i]=y[i+1]-coeff[1][i]*x[i+1];
+    for(i=0;i<n;++i)
+        coeff[2][i]=x[i];
     coeff[0][n-1]=0;
     coeff[1][n-1]=0;
     //for(i=0;i<n;++i)printf("%d: %.9e,%.9e,%.9e\n",i,coeff[0][i],coeff[1][i],coeff[2][i]);
@@ -269,7 +270,7 @@ int main() {
     struct arrsize* forcedata = readforce();
     long double** bessel_interp = gen_lin_interp((long double**) forcedata->a, forcedata->n);
 
-    vector<particle*> particles = solve_sde(positions, coeffs, bessel_interp);
+    struct particle** particles = solve_sde(positions, coeffs, bessel_interp);
 
     ofstream outfile;
     outfile.open("final_positions.csv");

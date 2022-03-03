@@ -18,7 +18,7 @@ TreeNode::TreeNode(long double x_start, long double y_start, long double size, l
     n_particles = 0;
 }
 
-void TreeNode::insert(particle* p) {
+void TreeNode::insert_particle(particle* p) {
     particles.push_back(p);
     x_com = (x_com * n_particles + p->x) / (n_particles + 1);
     y_com = (y_com * n_particles + p->y) / (n_particles + 1);
@@ -27,6 +27,7 @@ void TreeNode::insert(particle* p) {
     long double vx_ave = 0;
     long double vy_ave = 0;
     if (size < 2 * SDESOLVER_RADIUS) {
+        std::cout << "die" <<std::endl;
         for (int i = 0; i < n_particles; i++) {
             vx_ave += particles[i]->vx;
             vy_ave += particles[i]->vy;
@@ -38,11 +39,9 @@ void TreeNode::insert(particle* p) {
     }
     // terminal node
     if (n_particles == 1) {
-        std::cout << "1" << std::endl;
         return;
         // generate children
     } else if (n_particles == 2) {
-        std::cout << "2" << std::endl;
         children.emplace_back(x_start, y_start, size / 2, interp);
         children.emplace_back(x_start + size / 2, y_start, size / 2, interp);
         children.emplace_back(x_start, y_start + size / 2, size / 2, interp);
@@ -50,37 +49,37 @@ void TreeNode::insert(particle* p) {
         for (int i = 0; i < 2; i++) {
             if (particles[i]->x < x_start + size / 2) {
                 if (particles[i]->y < y_start + size / 2) {
-                    children[0].insert(particles[i]);
+                    children[0].insert_particle(particles[i]);
                 } else {
-                    children[2].insert(particles[i]);
+                    children[2].insert_particle(particles[i]);
                 }
             } else {
                 if (particles[i]->y < y_start + size / 2) {
-                    children[1].insert(particles[i]);
+                    children[1].insert_particle(particles[i]);
                 } else {
-                    children[3].insert(particles[i]);
+                    children[3].insert_particle(particles[i]);
                 }
             }
         }
     } else {
-        std::cout << "multiple" << std::endl;
+//        std::cout << "multiple" << std::endl;
         if (p->x < x_start + size / 2) {
             if (p->y < y_start + size / 2) {
-                children[0].insert(p);
+                children[0].insert_particle(p);
             } else {
-                children[2].insert(p);
+                children[2].insert_particle(p);
             }
         }else{
             if (p->y < y_start + size / 2) {
-                children[1].insert(p);
+                children[1].insert_particle(p);
             } else {
-                children[3].insert(p);
+                children[3].insert_particle(p);
             }
         }
     }
 }
 
-void TreeNode::calculate_force(particle *source, long double* force) {
+void TreeNode::calculate_force(particle* source, long double* force) {
     long double r = sqrt(pow(x_com - source->x, 2) + pow(y_com - source->y, 2));
     if(size / r > SDESOLVER_MAX_ANGLE){
         for(int i = 0; i < 4; i++){
