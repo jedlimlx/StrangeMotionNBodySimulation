@@ -1,8 +1,9 @@
 //
 // Created by qiuzi on 3/1/2022.
 //
-long double eval_interp(long double **interp, long double point)
 #include "TreeNode.h"
+long double eval_interp(long double **interp, long double point);
+
 //using namespace std;
 TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp) {
     children.reserve(4);
@@ -23,7 +24,7 @@ void TreeNode::insert(particle* p) {
     //resolve collisions
     long double vx_ave = 0;
     long double vy_ave = 0;
-    if(size < 2 * RADIUS){
+    if(size < 2 * SDESOLVER_RADIUS){
         for(int i = 0; i < n_particles; i++){
             vx_ave += particles[i]->vx;
             vy_ave += particles[i]->vy;
@@ -74,7 +75,7 @@ void TreeNode::insert(particle* p) {
 
 void TreeNode::calculate_force(particle *source, long double* force) {
     long double r = sqrt(pow(x_com - source->x, 2) + pow(y_com - source->y, 2));
-    if(size / r > MAX_ANGLE){
+    if(size / r > SDESOLVER_MAX_ANGLE){
         for(int i = 0; i < 4; i++){
             children[i].calculate_force(source, force);
         }

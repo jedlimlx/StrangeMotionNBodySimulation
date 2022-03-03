@@ -2,11 +2,11 @@
 // Created by qiuzi on 3/1/2022.
 //
 
+
+#include <vector>
 #ifndef SDESOLVER_TREENODE_H
 #define SDESOLVER_TREENODE_H
 #include "sde_solver_constants.h"
-#include "vector"
-using namespace std;
 
 struct particle{
     long double x;
@@ -20,9 +20,9 @@ struct particle{
 
 class TreeNode {
 public:
-    vector<TreeNode> children; // direct children of this cell
+    std::vector<TreeNode> children; // direct children of this cell
     int n_particles; // number of particles in this cell (recursive)
-    vector<particle*> particles; // all particles in this cell (recursive)
+    std::vector<particle*> particles; // all particles in this cell (recursive)
     long double x_start; // bottom left
     long double y_start; // bottom left
     long double size; // size of cell

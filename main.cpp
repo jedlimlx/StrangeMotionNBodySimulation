@@ -13,7 +13,7 @@ using namespace std;
 //import coefficients for the force polynomial
 int import_coeffs(long double coeffs[]){
     ifstream infile;
-    infile.open(FORCE_COEFFS_FILENAME);
+    infile.open(SDESOLVER_FORCE_COEFFS_FILENAME);
     //error checking
     if(! infile.is_open()){
         printf("Failed to open file");
@@ -22,7 +22,7 @@ int import_coeffs(long double coeffs[]){
 
     string word;
     //load the data into the arrays
-    for(int i = 0; i < TERMS; i++) {
+    for(int i = 0; i < SDESOLVER_TERMS; i++) {
         getline(infile, word);
         coeffs[i] = stod(word);
     }
@@ -33,7 +33,7 @@ int import_coeffs(long double coeffs[]){
 //polynomial for the force
 long double force(long double r, const long double coeffs[]){
     long double sum = 0;
-    for (int i = 0; i < TERMS; i++){
+    for (int i = 0; i < SDESOLVER_TERMS; i++){
         sum += coeffs[i] * pow(r, i);
     }
     return sum;
@@ -42,7 +42,7 @@ long double force(long double r, const long double coeffs[]){
 //reads in the initial positions
 int import_initial_data(double positions[]){
     ifstream infile;
-    infile.open(INITIAL_DATA_FILENAME);
+    infile.open(SDESOLVER_INITIAL_DATA_FILENAME);
     //error checking
     if(! infile.is_open()){
         cout << "Failed to open file" << endl;
@@ -50,7 +50,7 @@ int import_initial_data(double positions[]){
     }
     //read in the data
     string word;
-    for(int i = 0; i < INITIAL_DATA_LENGTH; i ++){
+    for(int i = 0; i < SDESOLVER_INITIAL_DATA_LENGTH; i ++){
         getline(infile, word);
         positions[i] = stod(word);
     }
@@ -62,13 +62,13 @@ int import_initial_data(double positions[]){
 
 //initialize positions of particles
 int generate_initial_positions(const double initial_data[], long double* positions[], bool**mesh){
-    default_random_engine generator(PARTICLES);
+    default_random_engine generator(SDESOLVER_PARTICLES);
     uniform_real_distribution<long double> angle_distribution(0, 2 * M_PI);
-    uniform_int_distribution<int> index_distribution(0,  INITIAL_DATA_LENGTH - 1);
+    uniform_int_distribution<int> index_distribution(0,  SDESOLVER_INITIAL_DATA_LENGTH - 1);
 
     long double r, theta, x, y;
     int index;
-    for(int i = 0; i < PARTICLES; i++){
+    for(int i = 0; i < SDESOLVER_PARTICLES; i++){
         index = index_distribution(generator);
         r = initial_data[index];
         theta = angle_distribution(generator);
@@ -88,8 +88,8 @@ int generate_initial_positions(const double initial_data[], long double* positio
 //rng time
 long double get_random(){
     static default_random_engine generator(time(NULL));
-    normal_distribution<long double> distribution(0, sqrt(DT));
-    return RANDOM_COEFFICIENT * distribution(generator);
+    normal_distribution<long double> distribution(0, sqrt(SDESOLVER_DT));
+    return SDESOLVER_RANDOM_COEFFICIENT * distribution(generator);
 }
 
 //split up the loop for sde solving
@@ -113,12 +113,12 @@ void loop_for_particles(int start, int end, vector<particle*> particles, long do
         rand_x = get_random();
         rand_y = get_random();
         base.calculate_force(particles[i], gravity);
-        v_x_f = v_x_i + (force_val * (x_original / r) * DT -
-                         CD * v_x_i * DT +
-                         rand_x + gravity[0] * DT) / MASS;
-        v_y_f = v_y_i + (force_val * (y_original / r) * DT -
-                         CD * v_y_i * DT +
-                         rand_y + gravity[0] * DT) / MASS;
+        v_x_f = v_x_i + (force_val * (x_original / r) * SDESOLVER_DT -
+                SDESOLVER_CD * v_x_i * SDESOLVER_DT +
+                         rand_x + gravity[0] * SDESOLVER_DT) / SDESOLVER_MASS;
+        v_y_f = v_y_i + (force_val * (y_original / r) * SDESOLVER_DT -
+                SDESOLVER_CD * v_y_i * SDESOLVER_DT +
+                         rand_y + gravity[0] * SDESOLVER_DT) / SDESOLVER_MASS;
 //        if (i == 0) {
 //            cout << y << ", " << (force(r, coeffs, terms) * (y / r) * dt -
 //                                  cd * v_y_i * dt +
@@ -126,8 +126,8 @@ void loop_for_particles(int start, int end, vector<particle*> particles, long do
 //        }
         particles[i]->vx = v_x_f;
         particles[i]->vy = v_y_f;
-        x = x_original + v_x_f * DT;
-        y = y_original + v_y_f * DT;
+        x = x_original + v_x_f * SDESOLVER_DT;
+        y = y_original + v_y_f * SDESOLVER_DT;
         if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
             particles[i]->x = 0;
             particles[i]->y = 0;
@@ -148,19 +148,19 @@ vector<particle*> solve_sde(long double* positions[], long double coeffs[], long
     TreeNode base(-0.05, -0.05, 0.1, interp);
     struct particle *p;
     vector<particle*> particles;
-    for(int i = 0; i < PARTICLES; i++){
+    for(int i = 0; i < SDESOLVER_PARTICLES; i++){
         p = new struct particle(positions[i][0], positions[i][1]);
         particles.push_back(p);
     }
-    float length = ((float) PARTICLES) / N_THREADS; //number of particles for each thread to process
-    for (int t = 0; t < N; ++t) {
+    float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
+    for (int t = 0; t < SDESOLVER_N; ++t) {
         base.clear();
-        for(int i = 0; i < PARTICLES; i++){
+        for(int i = 0; i < SDESOLVER_PARTICLES; i++){
             base.insert(particles[i]);
         }
-        thread threads[N_THREADS];
-        for(int i = 0; i < N_THREADS; i++){
-            threads[i] = thread(loop_for_particles, (int) (i * length), (int) ((i + 1) * length), particles, coeffs, base);
+        thread threads[SDESOLVER_N_THREADS];
+        for(int i = 0; i < SDESOLVER_N_THREADS; i++){
+            threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
         }
         for(auto& thread: threads){
             thread.join();
@@ -181,7 +181,7 @@ struct arrsize{
 };
 
 struct arrsize* readforce(){ // double**
-    FILE* f = fopen(BESSELINTERP, "r");
+    FILE* f = fopen(SDESOLVER_BESSELINTERP, "r");
     unsigned nlines = 0,i;
     char c;
     long double **forcedata;
@@ -222,30 +222,30 @@ long double** gen_lin_interp(long double **data,unsigned n){
 }
 
 int main() {
-    auto *coeffs = (long double*) malloc(TERMS * sizeof(long double));
+    auto *coeffs = (long double*) malloc(SDESOLVER_TERMS * sizeof(long double));
     //import polynomial coefficients
     if(import_coeffs(coeffs)){
         return 1;
     }
-    auto *initial_data = (double*) malloc(INITIAL_DATA_LENGTH * sizeof(double));
+    auto *initial_data = (double*) malloc(SDESOLVER_INITIAL_DATA_LENGTH * sizeof(double));
     //import initial data
     if(import_initial_data(initial_data)){
         return 1;
     }
 
     //initialize 2d array for positions
-    auto** positions = (long double**) malloc(PARTICLES * sizeof(long double*));
-    for(int i = 0; i < PARTICLES; i++){
+    auto** positions = (long double**) malloc(SDESOLVER_PARTICLES * sizeof(long double*));
+    for(int i = 0; i < SDESOLVER_PARTICLES; i++){
         positions[i] = (long double*) malloc(2 * sizeof(long double));
     }
     //initialize 2d array for collision detection
-    auto** mesh = (bool**) malloc(MESH_FINENESS * sizeof(bool*));
-    for(int i = 0; i < MESH_FINENESS; i++){
-        mesh[i] = (bool*) malloc(MESH_FINENESS * sizeof(bool));
+    auto** mesh = (bool**) malloc(SDESOLVER_MESH_FINENESS * sizeof(bool*));
+    for(int i = 0; i < SDESOLVER_MESH_FINENESS; i++){
+        mesh[i] = (bool*) malloc(SDESOLVER_MESH_FINENESS * sizeof(bool));
     }
     //initialize to false
-    for (int i = 0; i < MESH_FINENESS; i++) {
-        for (int j = 0; j < MESH_FINENESS; j++) {
+    for (int i = 0; i < SDESOLVER_MESH_FINENESS; i++) {
+        for (int j = 0; j < SDESOLVER_MESH_FINENESS; j++) {
             mesh[i][j] = false;
         }
     }
@@ -254,12 +254,12 @@ int main() {
     free(initial_data); // free up memory since its not needed any more
 
     //allocate memory for initial velocities array
-    auto** velocities = (long double**) malloc(PARTICLES * sizeof(long double*));
-    for(int i = 0; i < PARTICLES; i++){
+    auto** velocities = (long double**) malloc(SDESOLVER_PARTICLES * sizeof(long double*));
+    for(int i = 0; i < SDESOLVER_PARTICLES; i++){
         velocities[i] = (long double*) malloc(2 * sizeof(long double));
     }
     //set initial velocities to 0
-    for (int i = 0; i < PARTICLES; i++) {
+    for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         velocities[i][0] = 0;
         velocities[i][1] = 0;
     }
@@ -271,7 +271,7 @@ int main() {
 
     ofstream outfile;
     outfile.open("final_positions.csv");
-    for (int i = 0; i < PARTICLES; ++i) {
+    for (int i = 0; i < SDESOLVER_PARTICLES; ++i) {
         outfile << particles[i]->x << "," << particles[i]->y << endl;
     }
 
