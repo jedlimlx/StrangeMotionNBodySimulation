@@ -3,12 +3,12 @@
 //
 #include "TreeNode.h"
 #include <iostream>
+#include <math.h>
 long double eval_interp(long double **interp, long double point);
 
 //using namespace std;
 TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp) {
-    children = new std::vector<TreeNode>;
-    children->reserve(4);
+    children.reserve(4);
     this->x_start = x_start;
     this->y_start = y_start;
     this->size = size;
@@ -38,17 +38,19 @@ void TreeNode::insert(particle* p) {
     }
     // terminal node
     if (n_particles == 1) {
+        std::cout << "1" << std::endl;
         return;
         // generate children
     } else if (n_particles == 2) {
-        children->emplace_back(x_start, y_start, size / 2, interp);
-        children->emplace_back(x_start + size / 2, y_start, size / 2, interp);
-        children->emplace_back(x_start, y_start + size / 2, size / 2, interp);
-        children->emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
+        std::cout << "2" << std::endl;
+        children.emplace_back(x_start, y_start, size / 2, interp);
+        children.emplace_back(x_start + size / 2, y_start, size / 2, interp);
+        children.emplace_back(x_start, y_start + size / 2, size / 2, interp);
+        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
         for (int i = 0; i < 2; i++) {
             if (particles[i]->x < x_start + size / 2) {
                 if (particles[i]->y < y_start + size / 2) {
-                    children.insert(particles[i]);
+                    children[0].insert(particles[i]);
                 } else {
                     children[2].insert(particles[i]);
                 }
@@ -61,6 +63,7 @@ void TreeNode::insert(particle* p) {
             }
         }
     } else {
+        std::cout << "multiple" << std::endl;
         if (p->x < x_start + size / 2) {
             if (p->y < y_start + size / 2) {
                 children[0].insert(p);
@@ -94,11 +97,6 @@ void TreeNode::clear() {
     particles.clear();
     n_particles = 0;
 }
-
-TreeNode::~TreeNode() {
-    delete children;
-}
-
 #define MAX_VALUE (-0.000123193)
 long double eval_interp(long double **interp, long double point){
     if(point < 0.001) return MAX_VALUE;
