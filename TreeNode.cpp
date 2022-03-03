@@ -1,17 +1,15 @@
 //
 // Created by qiuzi on 3/1/2022.
 //
-
-#include <cstdlib>
-#include <cmath>
-#include <boost/math/tr1.hpp>
+long double eval_interp(long double **interp, long double point)
 #include "TreeNode.h"
 //using namespace std;
-TreeNode::TreeNode(long double x_start, long double y_start, long double size) {
+TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp) {
     children.reserve(4);
     this->x_start = x_start;
     this->y_start = y_start;
     this->size = size;
+    this->interp = interp;
     x_com = 0;
     y_com = 0;
     n_particles = 0;
@@ -40,13 +38,10 @@ void TreeNode::insert(particle* p) {
         return;
         // generate children
     }else if(n_particles == 2){
-        children.emplace_back(x_start, y_start, size / 2);
-        children.emplace_back(x_start + size / 2, y_start, size / 2);
-        children.emplace_back(x_start, y_start + size / 2, size / 2);
-        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2);
-        for(int i = 0; i < 4; i++){
-            children[i].parent = this;
-        }
+        children.emplace_back(x_start, y_start, size / 2, interp);
+        children.emplace_back(x_start + size / 2, y_start, size / 2, interp);
+        children.emplace_back(x_start, y_start + size / 2, size / 2, interp);
+        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
         for (int i = 0 ; i < 2; i++){
             if(particles[i]->x < x_start + size / 2){
                 if(particles[i]->y < y_start + size / 2){
@@ -77,15 +72,42 @@ void TreeNode::insert(particle* p) {
     }
 }
 
-void TreeNode::calculate_force(particle *source, long double *force) {
+void TreeNode::calculate_force(particle *source, long double* force) {
     long double r = sqrt(pow(x_com - source->x, 2) + pow(y_com - source->y, 2));
     if(size / r > MAX_ANGLE){
         for(int i = 0; i < 4; i++){
             children[i].calculate_force(source, force);
         }
     }
-    long double f = COEFF * n_particles * QK * QK * boost::math::tr1::cyl_bessel_k(0.0, r * CAPL_LENGTH) / r;
+    long double f = eval_interp(interp, r) / r;
     force[0] += f * (x_com - source->x);
     force[1] += f * (y_com - source->y);
 }
 
+void TreeNode::clear() {
+    children.clear();
+    particles.clear();
+    n_particles = 0;
+}
+
+#define MAX_VALUE (-0.000123193)
+long double eval_interp(long double **interp, long double point){
+    if(point < 0.001) return MAX_VALUE;
+    long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
+    unsigned i=0;
+    while(c0[i]>0){
+        if(point<bd[i+1])break;
+        ++i;
+    } // TODO: use some binary search
+    if(c0[i]==0)--i;
+    return c0[i]+c1[i]*point;
+}
+
+particle::particle(long double x, long double y) {
+    this->x = x;
+    this->y = y;
+    vx = 0;
+    vy = 0;
+    ax = 0;
+    ay = 0;
+}

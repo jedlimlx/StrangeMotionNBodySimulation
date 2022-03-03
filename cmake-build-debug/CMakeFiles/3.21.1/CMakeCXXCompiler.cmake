@@ -1,4 +1,4 @@
-set(CMAKE_CXX_COMPILER "/usr/local/bin/mpic++")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 set(CMAKE_CXX_COMPILER_ARG1 "")
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 set(CMAKE_CXX_COMPILER_VERSION "12.0.0.12000032")
@@ -85,7 +85,7 @@ endif()
 
 
 
-set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "/usr/local/Cellar/mpich/4.0/include;/Library/Developer/CommandLineTools/usr/include/c++/v1;/Library/Developer/CommandLineTools/usr/lib/clang/12.0.0/include;/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include;/Library/Developer/CommandLineTools/usr/include")
-set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "mpicxx;mpi;pmpi;c++")
-set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "/usr/local/Cellar/mpich/4.0/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/lib")
+set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "/Library/Developer/CommandLineTools/usr/include/c++/v1;/Library/Developer/CommandLineTools/usr/lib/clang/12.0.0/include;/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include;/Library/Developer/CommandLineTools/usr/include")
+set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "c++")
+set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/lib")
 set(CMAKE_CXX_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks")
