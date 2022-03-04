@@ -12,7 +12,7 @@
 #define  SDESOLVER_PARTICLES  20000 //number of particles to simulate
 #define  SDESOLVER_MESH_FINENESS  3000 //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 #define  SDESOLVER_N  100000 //number of timesteps
-#define  SDESOLVER_N_THREADS  6
+#define  SDESOLVER_N_THREADS  12
 
 #define   SDESOLVER_VISCOSITY  0.0010518 //dynamic viscosity of water
 #define   SDESOLVER_RADIUS  48e-6 //radius of particle

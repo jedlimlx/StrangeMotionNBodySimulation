@@ -99,6 +99,7 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 //        cout << get_random(random_coeff, dt) << endl;
 //    }
     gravity = (long double*) malloc(2 * sizeof(long double));
+    cout << "test" << endl;
     for (int i = start; i < end; ++i) {
         gravity[0] = 0;
         gravity[1] = 0;
@@ -128,6 +129,7 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         x = x_original + v_x_f * SDESOLVER_DT;
         y = y_original + v_y_f * SDESOLVER_DT;
         if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
+            cout << "die" << endl;
             particles[i]->x = 0;
             particles[i]->y = 0;
         } else {
@@ -157,15 +159,14 @@ struct particle** solve_sde(long double* positions[], long double coeffs[], long
             base.insert_particle(particles[i]);
         }
         thread threads[SDESOLVER_N_THREADS];
-        for(int i = 0; i < SDESOLVER_N_THREADS; i++){threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
+        for(int i = 0; i < SDESOLVER_N_THREADS; i++){
+            threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
         }
         for(auto& thread: threads){
             thread.join();
         }
         outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2))<< endl;
-        if(t % 1000 == 0){
-            cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
-        }
+        cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
     }
     outfile.close();
     return particles;
