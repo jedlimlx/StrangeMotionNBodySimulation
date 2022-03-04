@@ -22,7 +22,7 @@ struct particle{
 
 class TreeNode {
 public:
-    std::vector<TreeNode> children; // direct children of this cell TODO use array
+    std::vector<TreeNode> children; // direct children of this cell
     int n_particles; // number of particles in this cell (recursive)
     std::vector<particle*> particles; // all particles in this cell (recursive)
     long double x_start; // bottom left
@@ -31,8 +31,10 @@ public:
     long double x_com;
     long double y_com;
     long double** interp;
+    int stop;
+    int layer;
 
-    TreeNode(long double x_start, long double y_start, long double size, long double** interp);
+    TreeNode(long double x_start, long double y_start, long double size, long double** interp, int layer);
 
     void insert_particle(particle* p); //recursive
 

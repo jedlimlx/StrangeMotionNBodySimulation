@@ -93,7 +93,7 @@ long double get_random(){
 }
 
 //split up the loop for sde solving
-void loop_for_particles(int start, int end, particle** particles, long double* coeffs, TreeNode base){
+void loop_for_particles(int start, int end, struct particle** particles, long double* coeffs, TreeNode base){
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y, *gravity;
 //    if(start == 0) {
 //        cout << get_random(random_coeff, dt) << endl;
@@ -108,7 +108,6 @@ void loop_for_particles(int start, int end, particle** particles, long double* c
         v_y_i = particles[i]->vx;
 
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
-
         force_val = force(r, coeffs);
         rand_x = get_random();
         rand_y = get_random();
@@ -145,7 +144,7 @@ struct particle** solve_sde(long double* positions[], long double coeffs[], long
     ofstream outfile;
     outfile.open("position.csv");
 
-    TreeNode base(-0.05, -0.05, 0.1, interp);
+    TreeNode base(-0.05, -0.05, 0.1, interp, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
@@ -155,18 +154,15 @@ struct particle** solve_sde(long double* positions[], long double coeffs[], long
         base.clear();
 //        cout << particles[248]->x << ", " << particles[248]->y << endl << particles[249]->x << ", " << particles[249]->y << endl;
         for(int i = 0; i < SDESOLVER_PARTICLES; i++){
-            cout << particles[i]->x << ", " << particles[i]->y << ", " << i <<endl;
             base.insert_particle(particles[i]);
         }
         thread threads[SDESOLVER_N_THREADS];
-        for(int i = 0; i < SDESOLVER_N_THREADS; i++){
-            threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
+        for(int i = 0; i < SDESOLVER_N_THREADS; i++){threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
         }
         for(auto& thread: threads){
             thread.join();
         }
         outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2))<< endl;
-
         if(t % 1000 == 0){
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
         }

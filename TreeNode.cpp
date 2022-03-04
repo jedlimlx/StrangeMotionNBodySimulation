@@ -7,15 +7,17 @@
 long double eval_interp(long double **interp, long double point);
 
 //using namespace std;
-TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp) {
+TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp, int layer) {
     children.reserve(4);
     this->x_start = x_start;
     this->y_start = y_start;
     this->size = size;
     this->interp = interp;
+    this->layer = layer;
     x_com = 0;
     y_com = 0;
     n_particles = 0;
+    stop = 1;
 }
 
 void TreeNode::insert_particle(particle* p) {
@@ -26,8 +28,7 @@ void TreeNode::insert_particle(particle* p) {
     //resolve collisions
     long double vx_ave = 0;
     long double vy_ave = 0;
-    if (size < 2 * SDESOLVER_RADIUS) {
-        std::cout << "die" <<std::endl;
+    if (size < (2 * SDESOLVER_RADIUS)) {
         for (int i = 0; i < n_particles; i++) {
             vx_ave += particles[i]->vx;
             vy_ave += particles[i]->vy;
@@ -38,14 +39,15 @@ void TreeNode::insert_particle(particle* p) {
         }
     }
     // terminal node
-    if (n_particles == 1) {
+    if (n_particles == 1 || size < (2 * SDESOLVER_RADIUS)) {
         return;
         // generate children
     } else if (n_particles == 2) {
-        children.emplace_back(x_start, y_start, size / 2, interp);
-        children.emplace_back(x_start + size / 2, y_start, size / 2, interp);
-        children.emplace_back(x_start, y_start + size / 2, size / 2, interp);
-        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp);
+        stop = 0;
+        children.emplace_back(x_start, y_start, size / 2, interp, layer + 1);
+        children.emplace_back(x_start + size / 2, y_start, size / 2, interp, layer + 1);
+        children.emplace_back(x_start, y_start + size / 2, size / 2, interp, layer + 1);
+        children.emplace_back(x_start + size / 2, y_start + size / 2, size / 2, interp, layer + 1);
         for (int i = 0; i < 2; i++) {
             if (particles[i]->x < x_start + size / 2) {
                 if (particles[i]->y < y_start + size / 2) {
@@ -81,7 +83,8 @@ void TreeNode::insert_particle(particle* p) {
 
 void TreeNode::calculate_force(particle* source, long double* force) {
     long double r = sqrt(pow(x_com - source->x, 2) + pow(y_com - source->y, 2));
-    if(size / r > SDESOLVER_MAX_ANGLE){
+//    std::cout << layer << ", " << n_particles << ", " << stop << std::endl;
+    if(size / r > SDESOLVER_MAX_ANGLE && !stop){
         for(int i = 0; i < 4; i++){
             children[i].calculate_force(source, force);
         }
