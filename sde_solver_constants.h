@@ -5,13 +5,13 @@
 #ifndef SDESOLVER_SDE_SOLVER_CONSTANTS_H
 #define SDESOLVER_SDE_SOLVER_CONSTANTS_H
 
-#define SDESOLVER_FORCE_COEFFS_FILENAME "forcecoeffs.csv" //coefficients for force polynomial
+#define SDESOLVER_FORCE_DATA_FILENAME "forcedata.csv" //coefficients for force polynomial
 #define SDESOLVER_TERMS  26 //number of terms in force polynomial
-#define  SDESOLVER_INITIAL_DATA_LENGTH  399460 //number of initial r values
-#define  SDESOLVER_INITIAL_DATA_FILENAME  "initial_positions.csv" //initial r values
+#define  SDESOLVER_INITIAL_DATA_LENGTH  100000 //number of initial r values
+#define  SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" //initial r values
 #define  SDESOLVER_PARTICLES  20000 //number of particles to simulate
 #define  SDESOLVER_MESH_FINENESS  3000 //dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
-#define  SDESOLVER_N  100000 //number of timesteps
+#define  SDESOLVER_N  10000 //number of timesteps
 #define  SDESOLVER_N_THREADS  12
 
 #define   SDESOLVER_VISCOSITY  0.0010518 //dynamic viscosity of water
@@ -28,7 +28,6 @@
 #define SDESOLVER_MAX_ANGLE 0.1
 #define SDESOLVER_COEFF 166.649
 #define SDESOLVER_DT (SDESOLVER_T_END - SDESOLVER_T_START)/SDESOLVER_N
-#define SDESOLVER_QK 0.000553862
 #define SDESOLVER_BESSELINTERP "besselinterp.csv"
 
 #endif //SDESOLVER_SDE_SOLVER_CONSTANTS_H

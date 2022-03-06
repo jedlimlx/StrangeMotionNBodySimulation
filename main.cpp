@@ -10,25 +10,7 @@
 
 using namespace std;
 
-//import coefficients for the force polynomial
-int import_coeffs(long double coeffs[]){
-    ifstream infile;
-    infile.open(SDESOLVER_FORCE_COEFFS_FILENAME);
-    //error checking
-    if(! infile.is_open()){
-        printf("Failed to open file");
-        return 1;
-    }
 
-    string word;
-    //load the data into the arrays
-    for(int i = 0; i < SDESOLVER_TERMS; i++) {
-        getline(infile, word);
-        coeffs[i] = stod(word);
-    }
-    infile.close();
-    return 0;
-}
 
 //polynomial for the force
 long double force(long double r, const long double coeffs[]){
@@ -91,15 +73,24 @@ long double get_random(){
     normal_distribution<long double> distribution(0, sqrt(SDESOLVER_DT));
     return SDESOLVER_RANDOM_COEFFICIENT * distribution(generator);
 }
-
+long double eval_interp1(long double **interp, long double point){
+    long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
+    unsigned i=0;
+    while(c0[i]<INFINITY){
+        if(point<bd[i+1])break;
+        ++i;
+    } // TODO: use some binary search
+    if(c0[i]==INFINITY)--i;
+    return c0[i]+c1[i]*point;
+}
 //split up the loop for sde solving
-void loop_for_particles(int start, int end, struct particle** particles, long double* coeffs, TreeNode base){
+void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base){
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y, *gravity;
 //    if(start == 0) {
 //        cout << get_random(random_coeff, dt) << endl;
 //    }
     gravity = (long double*) malloc(2 * sizeof(long double));
-    cout << "test" << endl;
+//    cout << "test" << endl;
     for (int i = start; i < end; ++i) {
         gravity[0] = 0;
         gravity[1] = 0;
@@ -109,13 +100,13 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         v_y_i = particles[i]->vx;
 
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
-        force_val = force(r, coeffs);
+        force_val = eval_interp1(force_interp, r);
         rand_x = get_random();
         rand_y = get_random();
         base.calculate_force(particles[i], gravity);
         v_x_f = v_x_i + (force_val * (x_original / r) * SDESOLVER_DT -
                 SDESOLVER_CD * v_x_i * SDESOLVER_DT +
-                         rand_x + gravity[0] * SDESOLVER_DT) / SDESOLVER_MASS;
+                         rand_x + gravity[0] * SDESOLVER_DT)/ SDESOLVER_MASS;
         v_y_f = v_y_i + (force_val * (y_original / r) * SDESOLVER_DT -
                 SDESOLVER_CD * v_y_i * SDESOLVER_DT +
                          rand_y + gravity[0] * SDESOLVER_DT) / SDESOLVER_MASS;
@@ -129,9 +120,10 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         x = x_original + v_x_f * SDESOLVER_DT;
         y = y_original + v_y_f * SDESOLVER_DT;
         if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
+            cout << x << ", " << y << force_val * (x_original / r) << ", " << force_val * (y_original / r) << endl;
             cout << "die" << endl;
-            particles[i]->x = 0;
-            particles[i]->y = 0;
+            particles[i]->vx = 0;
+            particles[i]->vy = 0;
         } else {
             particles[i]->x = x;
             particles[i]->y = y;
@@ -140,13 +132,10 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 }
 
 //euler's method
-struct particle** solve_sde(long double* positions[], long double coeffs[], long double** interp){
+struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp){
     auto start = chrono::high_resolution_clock::now();
 
-    ofstream outfile;
-    outfile.open("position.csv");
-
-    TreeNode base(-0.05, -0.05, 0.1, interp, 0);
+    TreeNode base(-0.05, -0.05, 0.1, interp, 0, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
@@ -155,20 +144,28 @@ struct particle** solve_sde(long double* positions[], long double coeffs[], long
     for (int t = 0; t < SDESOLVER_N; ++t) {
         base.clear();
 //        cout << particles[248]->x << ", " << particles[248]->y << endl << particles[249]->x << ", " << particles[249]->y << endl;
-        for(int i = 0; i < SDESOLVER_PARTICLES; i++){
+//        cout << "test1 " << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
+        for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
             base.insert_particle(particles[i]);
         }
+//        cout << "test2 " << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
         thread threads[SDESOLVER_N_THREADS];
-        for(int i = 0; i < SDESOLVER_N_THREADS; i++){
-            threads[i] = thread(loop_for_particles, (i * length),  ((i + 1) * length), particles, coeffs, base);
+        for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
+            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles, force_interp, base);
         }
-        for(auto& thread: threads){
+        for (auto &thread: threads) {
             thread.join();
         }
-        outfile << sqrt(pow(positions[0][0], 2) + pow(positions[0][1], 2))<< endl;
-        cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
+        if (t%100 ==0) {
+            cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
+            ofstream outfile;
+            outfile.open("final_positions" + to_string(t) + ".csv");
+            for (int i = 0; i < SDESOLVER_PARTICLES; ++i) {
+                outfile << particles[i]->x << "," << particles[i]->y << endl;
+            }
+            outfile.close();
+        }
     }
-    outfile.close();
     return particles;
 }
 
@@ -177,8 +174,8 @@ struct arrsize{
     unsigned n;
 };
 
-struct arrsize* readforce(){ // double**
-    FILE* f = fopen(SDESOLVER_BESSELINTERP, "r");
+struct arrsize* readforce(char* filename){ // double**
+    FILE* f = fopen(filename, "r");
     unsigned nlines = 0,i;
     char c;
     long double **forcedata;
@@ -222,11 +219,6 @@ long double** gen_lin_interp(long double **data,unsigned n){
 }
 
 int main() {
-    auto *coeffs = (long double*) malloc(SDESOLVER_TERMS * sizeof(long double));
-    //import polynomial coefficients
-    if(import_coeffs(coeffs)){
-        return 1;
-    }
     auto *initial_data = (double*) malloc(SDESOLVER_INITIAL_DATA_LENGTH * sizeof(double));
     //import initial data
     if(import_initial_data(initial_data)){
@@ -253,21 +245,13 @@ int main() {
     generate_initial_positions(initial_data, positions, mesh);
     free(initial_data); // free up memory since its not needed any more
 
-    //allocate memory for initial velocities array
-    auto** velocities = (long double**) malloc(SDESOLVER_PARTICLES * sizeof(long double*));
-    for(int i = 0; i < SDESOLVER_PARTICLES; i++){
-        velocities[i] = (long double*) malloc(2 * sizeof(long double));
-    }
-    //set initial velocities to 0
-    for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
-        velocities[i][0] = 0;
-        velocities[i][1] = 0;
-    }
+    struct arrsize* bessel_data = readforce(SDESOLVER_BESSELINTERP);
+    long double** bessel_interp = gen_lin_interp((long double**) bessel_data->a, bessel_data->n);
 
-    struct arrsize* forcedata = readforce();
-    long double** bessel_interp = gen_lin_interp((long double**) forcedata->a, forcedata->n);
+    struct arrsize* force_data = readforce(SDESOLVER_FORCE_DATA_FILENAME);
+    long double** force_interp = gen_lin_interp((long double**) force_data->a, force_data->n);
 
-    struct particle** particles = solve_sde(positions, coeffs, bessel_interp);
+    struct particle** particles = solve_sde(positions, force_interp, bessel_interp);
 
     ofstream outfile;
     outfile.open("final_positions.csv");
@@ -277,8 +261,6 @@ int main() {
 
     outfile.close();
 
-    free(velocities);
-    free(coeffs);
     free(positions);
     free(mesh);
     return 0;
@@ -306,3 +288,4 @@ int main() {
 //    }
 //    return 0;
 //}
+//import coefficients for the force polynomial

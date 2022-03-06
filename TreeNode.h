@@ -33,14 +33,17 @@ public:
     long double** interp;
     int stop;
     int layer;
+    int printLayers;
 
-    TreeNode(long double x_start, long double y_start, long double size, long double** interp, int layer);
+    TreeNode(long double x_start, long double y_start, long double size, long double** interp, int layer, int printLayers);
 
     void insert_particle(particle* p); //recursive
 
     void calculate_force(particle* source, long double* force);
 
     void clear();
+
+    void resolve_collisions();
 };
 
 long double eval_interp(long double **interp, long double point);
