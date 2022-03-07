@@ -74,6 +74,7 @@ long double get_random(){
     return SDESOLVER_RANDOM_COEFFICIENT * distribution(generator);
 }
 long double eval_interp1(long double **interp, long double point){
+    point = point / 100;
     long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
     unsigned i=0;
     while(c0[i]<INFINITY){
@@ -81,7 +82,7 @@ long double eval_interp1(long double **interp, long double point){
         ++i;
     } // TODO: use some binary search
     if(c0[i]==INFINITY)--i;
-    return c0[i]+c1[i]*point;
+    return c0[i]+c1[i]*point*1e11;
 }
 //split up the loop for sde solving
 void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base){
@@ -101,15 +102,16 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
         force_val = eval_interp1(force_interp, r);
+
         rand_x = get_random();
         rand_y = get_random();
         base.calculate_force(particles[i], gravity);
-        v_x_f = v_x_i + (force_val * (x_original / r) * SDESOLVER_DT -
-                SDESOLVER_CD * v_x_i * SDESOLVER_DT +
-                         rand_x + gravity[0] * SDESOLVER_DT)/ SDESOLVER_MASS;
-        v_y_f = v_y_i + (force_val * (y_original / r) * SDESOLVER_DT -
-                SDESOLVER_CD * v_y_i * SDESOLVER_DT +
-                         rand_y + gravity[0] * SDESOLVER_DT) / SDESOLVER_MASS;
+        v_x_f = v_x_i + (force_val * (x_original / r) * (SDESOLVER_DT) -
+                (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) +
+                         rand_x + gravity[0] * (SDESOLVER_DT))/ (SDESOLVER_MASS);
+        v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) -
+                (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) +
+                         rand_y + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
 //        if (i == 0) {
 //            cout << y << ", " << (force(r, coeffs, terms) * (y / r) * dt -
 //                                  cd * v_y_i * dt +
@@ -117,10 +119,10 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 //        }
         particles[i]->vx = v_x_f;
         particles[i]->vy = v_y_f;
-        x = x_original + v_x_f * SDESOLVER_DT;
-        y = y_original + v_y_f * SDESOLVER_DT;
-        if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
-            cout << x << ", " << y << force_val * (x_original / r) << ", " << force_val * (y_original / r) << endl;
+        x = x_original + v_x_f * (SDESOLVER_DT);
+        y = y_original + v_y_f * (SDESOLVER_DT);
+        if (x > 9 || x < -9 || y > 9 || y < -9){
+            cout << SDESOLVER_CD << endl;
             cout << "die" << endl;
             particles[i]->vx = 0;
             particles[i]->vy = 0;
@@ -135,10 +137,10 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp){
     auto start = chrono::high_resolution_clock::now();
 
-    TreeNode base(-0.05, -0.05, 0.1, interp, 0, 0);
+    TreeNode base(-10, -10, 20, interp, 0, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
-        particles[i] = new struct particle(positions[i][0], positions[i][1]);
+        particles[i] = new struct particle(positions[i][0] * 100, positions[i][1] * 100);
     }
     float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
     for (int t = 0; t < SDESOLVER_N; ++t) {

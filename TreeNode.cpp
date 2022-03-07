@@ -83,10 +83,10 @@ void TreeNode::calculate_force(particle* source, long double* force) {
         if (r < 2 * SDESOLVER_RADIUS) {
             f = 0.00012319322708652803;
         }else {
-            f = eval_interp(interp, r) / r;
+            f = eval_interp(interp, r / 100) / r;
         }
-        force[0] += f * (x_com - source->x) / 1000;
-        force[1] += f * (y_com - source->y) / 1000;
+        force[0] += f * (x_com - x_start) * 1e3;
+        force[1] += f * (y_com - y_start) * 1e3;
     }
 }
 
