@@ -25,6 +25,10 @@ void TreeNode::insert_particle(particle* p) {
     particles.push_back(p);
     if(printLayers)
         std::cout << layer << std::endl;
+    if (isnan((x_com * n_particles + p->x) / (n_particles + 1))){
+        std::cout << "x_com is nan" << x_com << ", " << n_particles << ", " << p->x << std::endl;
+        std::exit(1);
+    }
     x_com = (x_com * n_particles + p->x) / (n_particles + 1);
     y_com = (y_com * n_particles + p->y) / (n_particles + 1);
     n_particles++;
@@ -84,6 +88,9 @@ void TreeNode::calculate_force(particle* source, long double* force) {
             f = 0.00012319322708652803;
         }else {
             f = eval_interp(interp, r / 100) / r;
+            if(isnan(f)){
+                std::cout << x_com << std::endl;
+            }
         }
         force[0] += f * (x_com - x_start) * 1e3;
         force[1] += f * (y_com - y_start) * 1e3;

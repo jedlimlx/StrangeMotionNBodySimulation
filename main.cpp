@@ -61,6 +61,9 @@ int generate_initial_positions(const double initial_data[], long double* positio
             x = r * cos(theta);
             y = r * sin(theta);
         }
+        if (isnan(x) || isnan(y)){
+            cout << "test" << endl;
+        }
         positions[i][0] = x;
         positions[i][1] = y;
     }
@@ -81,7 +84,7 @@ long double eval_interp1(long double **interp, long double point){
         if(point<bd[i+1])break;
         ++i;
     } // TODO: use some binary search
-    if(c0[i]==INFINITY)--i;
+    if(isnan(c0[i]))--i;
     return c0[i]+c1[i]*point*1e11;
 }
 //split up the loop for sde solving
@@ -100,8 +103,15 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         v_x_i = particles[i]->vx;
         v_y_i = particles[i]->vx;
 
+
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
+//        cout << x_original << endl;
         force_val = eval_interp1(force_interp, r);
+
+        if(isnan(force_val)){
+            cout << "jed" << endl;
+            exit(1);
+        }
 
         rand_x = get_random();
         rand_y = get_random();
@@ -141,6 +151,10 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0] * 100, positions[i][1] * 100);
+        if(isnan(particles[i]->x)){
+            cout << i << endl;
+            exit(1);
+        }
     }
     float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
     for (int t = 0; t < SDESOLVER_N; ++t) {
@@ -246,7 +260,9 @@ int main() {
     //initialize positions
     generate_initial_positions(initial_data, positions, mesh);
     free(initial_data); // free up memory since its not needed any more
-
+//    for (int i = 0; i < 20000; i++){
+//        cout << positions[i][0] << endl;
+//    }
     struct arrsize* bessel_data = readforce(SDESOLVER_BESSELINTERP);
     long double** bessel_interp = gen_lin_interp((long double**) bessel_data->a, bessel_data->n);
 
