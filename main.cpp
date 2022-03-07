@@ -72,12 +72,12 @@ int generate_initial_positions(const double initial_data[], long double* positio
 
 //rng time
 long double get_random(){
+    return 0;
     static default_random_engine generator(time(NULL));
     normal_distribution<long double> distribution(0, sqrt(SDESOLVER_DT));
     return SDESOLVER_RANDOM_COEFFICIENT * distribution(generator);
 }
 long double eval_interp1(long double **interp, long double point){
-    point = point / 100;
     long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
     unsigned i=0;
     while(c0[i]<INFINITY){
@@ -85,7 +85,7 @@ long double eval_interp1(long double **interp, long double point){
         ++i;
     } // TODO: use some binary search
     if(isnan(c0[i]))--i;
-    return c0[i]+c1[i]*point*1e11;
+    return c0[i]+c1[i]*point;
 }
 //split up the loop for sde solving
 void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base){
@@ -131,8 +131,8 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         particles[i]->vy = v_y_f;
         x = x_original + v_x_f * (SDESOLVER_DT);
         y = y_original + v_y_f * (SDESOLVER_DT);
-        if (x > 9 || x < -9 || y > 9 || y < -9){
-            cout << SDESOLVER_CD << endl;
+        if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
+            cout << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
             cout << "die" << endl;
             particles[i]->vx = 0;
             particles[i]->vy = 0;
@@ -147,10 +147,10 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp){
     auto start = chrono::high_resolution_clock::now();
 
-    TreeNode base(-10, -10, 20, interp, 0, 0);
+    TreeNode base(-0.1, -0.1, 0.2, interp, 0, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
     for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
-        particles[i] = new struct particle(positions[i][0] * 100, positions[i][1] * 100);
+        particles[i] = new struct particle(positions[i][0], positions[i][1]);
         if(isnan(particles[i]->x)){
             cout << i << endl;
             exit(1);
@@ -235,6 +235,7 @@ long double** gen_lin_interp(long double **data,unsigned n){
 }
 
 int main() {
+    cout<<SDESOLVER_MASS<<endl;
     auto *initial_data = (double*) malloc(SDESOLVER_INITIAL_DATA_LENGTH * sizeof(double));
     //import initial data
     if(import_initial_data(initial_data)){
