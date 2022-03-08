@@ -44,7 +44,7 @@ int import_initial_data(double positions[]){
 
 //initialize positions of particles
 int generate_initial_positions(const double initial_data[], long double* positions[], bool**mesh){
-    default_random_engine generator(SDESOLVER_PARTICLES);
+    default_random_engine generator(time(NULL));
     uniform_real_distribution<long double> angle_distribution(0, 2 * M_PI);
     uniform_int_distribution<int> index_distribution(0,  SDESOLVER_INITIAL_DATA_LENGTH - 1);
 
@@ -56,7 +56,7 @@ int generate_initial_positions(const double initial_data[], long double* positio
         theta = angle_distribution(generator);
         x = r * cos(theta);
         y = r * sin(theta);
-        while(mesh[1500 + ((int) (x / 75E-6))][1500 + ((int) (y / 75E-6))]) {
+        while(mesh[1500 + ((int) (x / SDESOLVER_RADIUS))][1500 + ((int) (y / SDESOLVER_RADIUS))]) {
             theta = angle_distribution(generator);
             x = r * cos(theta);
             y = r * sin(theta);
@@ -72,11 +72,11 @@ int generate_initial_positions(const double initial_data[], long double* positio
 
 //rng time
 long double get_random(){
-    return 0;
     static default_random_engine generator(time(NULL));
     normal_distribution<long double> distribution(0, sqrt(SDESOLVER_DT));
     return SDESOLVER_RANDOM_COEFFICIENT * distribution(generator);
 }
+
 long double eval_interp1(long double **interp, long double point){
     long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
     unsigned i=0;

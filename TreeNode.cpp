@@ -92,8 +92,8 @@ void TreeNode::calculate_force(particle* source, long double* force) {
                 std::cout << x_com << std::endl;
             }
         }
-        force[0] += 0*f * (x_com - x_start) / 100000;
-        force[1] += 0*f * (y_com - y_start) / 100000;
+        force[0] += 0*f * (x_com - x_start) ;
+        force[1] += 0*f * (y_com - y_start) ;
     }
 }
 
