@@ -172,7 +172,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
         for (auto &thread: threads) {
             thread.join();
         }
-        if (t%100 ==0) {
+        if (t%1000 ==0) {
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
             ofstream outfile;
             outfile.open("final_positions" + to_string(t) + ".csv");
