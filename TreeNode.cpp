@@ -104,22 +104,23 @@ void TreeNode::clear() {
 }
 
 void TreeNode::resolve_collisions() {
-    //resolve collisions
-    if(!stop){
-        for(int i = 0; i < 4; i++){
+    // resolve collisions
+    if (!stop) {
+        for (int i = 0; i < 4; i++){
             children[i].resolve_collisions();
         }
-    }else {
+    } else {
         long double vx_ave = 0;
         long double vy_ave = 0;
         if (size < (2 * SDESOLVER_RADIUS)) {
             for (int i = 0; i < n_particles; i++) {
-                vx_ave += particles[i]->vx;
-                vy_ave += particles[i]->vy;
+                vx_ave += particles[i] -> vx;
+                vy_ave += particles[i] -> vy;
             }
+
             for (int i = 0; i < n_particles; i++) {
-                particles[i]->vx = vx_ave / n_particles;
-                particles[i]->vy = vy_ave / n_particles;
+                particles[i] -> vx = vx_ave / n_particles;
+                particles[i] -> vy = vy_ave / n_particles;
             }
         }
     }
@@ -127,15 +128,17 @@ void TreeNode::resolve_collisions() {
 
 #define MAX_VALUE (-0.000123193)
 long double eval_interp(long double **interp, long double point){
-    if(point < 0.001) return MAX_VALUE;
+    if (point < 0.001) return MAX_VALUE;
+
     long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
-    unsigned i=0;
-    while(c0[i]>0){
-        if(point<bd[i+1])break;
+    unsigned i = 0;
+    while (c0[i] > 0) {
+        if (point < bd[i + 1])break;
         ++i;
     } // TODO: use some binary search
-    if(c0[i]==0)--i;
-    return c0[i]+c1[i]*point;
+
+    if (c0[i] == 0) --i;
+    return c0[i] + c1[i] * point;
 }
 
 particle::particle(long double x, long double y) {
