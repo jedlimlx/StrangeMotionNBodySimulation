@@ -7,7 +7,6 @@
 #include "sde_solver_constants.h"
 #include "TreeNode.h"
 
-
 using namespace std;
 
 // polynomial for the force
@@ -23,8 +22,9 @@ long double force(long double r, const long double coeffs[]){
 int import_initial_data(double positions[]){
     ifstream infile;
     infile.open(SDESOLVER_INITIAL_DATA_FILENAME);
+
     // error checking
-    if (!infile.is_open()){
+    if (!infile.is_open()) {
         cout << "Failed to open file" << endl;
         return 1;
     }
@@ -103,7 +103,6 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         v_x_i = particles[i]->vx;
         v_y_i = particles[i]->vx;
 
-
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
         force_val = eval_interp1(force_interp, r);
 
@@ -116,19 +115,17 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         rand_y = get_random();
         base.calculate_force(particles[i], gravity);
         v_x_f = v_x_i + (force_val * (x_original / r) * (SDESOLVER_DT) -
-                (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) +
-                         rand_x + gravity[0] * (SDESOLVER_DT))/ (SDESOLVER_MASS);
+                (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) + gravity[0] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
         v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) -
-                (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) +
-                         rand_y + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
+                (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
 
         particles[i]->vx = v_x_f;
         particles[i]->vy = v_y_f;
         x = x_original + v_x_f * (SDESOLVER_DT);
         y = y_original + v_y_f * (SDESOLVER_DT);
-        if (x > 0.09 || x < -0.09 || y > 0.09 || y < -0.09){
-            cout << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
-            cout << "die" << endl;
+        if (x > 0.08 || x < -0.08 || y > 0.08 || y < -0.08) {
+            cout << "A particle has left the bounds of the system!" << endl;
+            cout << "Acceleration: " << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
             particles[i]->vx = 0;
             particles[i]->vy = 0;
         } else {
@@ -144,9 +141,9 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
 
     TreeNode base(-0.1, -0.1, 0.2, interp, 0, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
-    for(int i = 0; i < SDESOLVER_PARTICLES; i++) {
+    for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
-        if(isnan(particles[i]->x)){
+        if (isnan(particles[i] -> x)){
             cout << i << endl;
             exit(1);
         }
@@ -167,7 +164,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             thread.join();
         }
 
-        if (t % 1000 ==0) {
+        if (t % 1000 == 0) {
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
 
             ofstream outfile;
@@ -175,6 +172,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             for (int i = 0; i < SDESOLVER_PARTICLES; ++i) {
                 outfile << particles[i]->x << "," << particles[i]->y << endl;
             }
+
             outfile.close();
         }
     }
@@ -206,7 +204,7 @@ struct arrsize* readforce(char* filename){ // double**
         fscanf(f,"%Lf,%Lf",&forcedata[0][i],&forcedata[1][i]);
     }
 
-    struct arrsize *r = (arrsize*) malloc(sizeof(struct arrsize));
+    auto *r = (arrsize*) malloc(sizeof(struct arrsize));
     r->n = nlines;
     r->a = forcedata;
     return r;
