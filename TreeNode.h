@@ -44,6 +44,8 @@ public:
     void clear();
 
     void resolve_collisions();
+
+    void get_particles();
 };
 
 long double eval_interp(long double **interp, long double point);

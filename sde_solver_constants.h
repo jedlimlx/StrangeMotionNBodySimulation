@@ -5,7 +5,7 @@
 #define SDESOLVER_TERMS  26 // number of terms in force polynomial
 #define  SDESOLVER_INITIAL_DATA_LENGTH  100000 // number of initial r values
 #define  SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" // initial r values
-#define  SDESOLVER_PARTICLES  100  // number of particles to simulate
+#define  SDESOLVER_PARTICLES  1000  // number of particles to simulate
 #define  SDESOLVER_MESH_FINENESS  3000 // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 #define  SDESOLVER_N  10000000 // number of timesteps
 #define  SDESOLVER_N_THREADS  1

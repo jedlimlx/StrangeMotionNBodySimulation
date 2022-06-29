@@ -1,6 +1,3 @@
-//
-// Created by qiuzi on 3/1/2022.
-//
 #include "TreeNode.h"
 #include <iostream>
 #include <math.h>
@@ -81,17 +78,17 @@ void TreeNode::insert_particle(particle* p) {
 }
 
 void TreeNode::calculate_force(particle* source, long double* force) {
-    long double r = sqrt(pow(x_com - source -> x, 2) + pow(y_com - source -> y, 2));
+    if (n_particles == 0) return;
+
+    long double r = 1e-12 + sqrt(pow(x_com - source -> x, 2) + pow(y_com - source -> y, 2));
     if (size / r > SDESOLVER_MAX_ANGLE && !stop) {
         for (int i = 0; i < 4; i++) {
             children[i].calculate_force(source, force);
         }
     } else {
-        if (n_particles == 0) return;
-
         long double f;
         if (r < 2 * SDESOLVER_RADIUS) {
-            f = 1.2039504173940417e-6;
+            f = 0;
         } else {
             f = eval_interp(interp, r) / r;
             if (isnan(f)) {
@@ -99,7 +96,7 @@ void TreeNode::calculate_force(particle* source, long double* force) {
             }
         }
 
-        // std::cout << "Particles: " << n_particles << std::endl;
+        // std::cout << f * r << " " << r << std::endl;
         // std::cout << "x: " << x_com << " " << source -> x << std::endl;
         // std::cout << "y: " << y_com << " " << source -> y << std::endl;
         force[0] += n_particles * f * (x_com - source->x);
@@ -115,14 +112,14 @@ void TreeNode::clear() {
 
 void TreeNode::resolve_collisions() {
     // resolve collisions
-    if (!stop) {
+    if (size > 3.5 * SDESOLVER_RADIUS && !stop) {
         for (int i = 0; i < 4; i++) {
             children[i].resolve_collisions();
         }
     } else {
         long double vx_ave = 0;
         long double vy_ave = 0;
-        if (size < (2 * SDESOLVER_RADIUS)) {
+        if (size < (3 * SDESOLVER_RADIUS)) {
             for (int i = 0; i < n_particles; i++) {
                 vx_ave += particles[i] -> vx;
                 vy_ave += particles[i] -> vy;
@@ -136,14 +133,27 @@ void TreeNode::resolve_collisions() {
     }
 }
 
-#define MAX_VALUE (0) //-0.000123193)
-long double eval_interp(long double **interp, long double point){
+void TreeNode::get_particles() {
+    if (n_particles == 0) return;
+    if (!stop) {
+        if (children.empty()) return;
+        for (int i = 0; i < 4; i++) {
+            children[i].get_particles();
+        }
+    } else {
+        std::cout << x_com << "," << y_com << std::endl;
+        //std::cout << particles[0]->x << " " << particles[0]->y << std::endl;
+    }
+}
+
+#define MAX_VALUE (-0.000123193)
+long double eval_interp(long double **interp, long double point) {
     if (point < 0.001) return MAX_VALUE;
 
-    long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
     unsigned i = 0;
+    long double *c0 = interp[1], *c1 = interp[0], *bd = interp[2];
     while (c0[i] > 0) {
-        if (point < bd[i + 1])break;
+        if (point < bd[i + 1]) break;
         ++i;
     } // TODO: use some binary search
 

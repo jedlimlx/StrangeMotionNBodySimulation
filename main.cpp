@@ -82,7 +82,7 @@ long double get_random(){
 long double eval_interp1(long double **interp, long double point){
     long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
     unsigned i = 0;
-    while (c0[i] < INFINITY){
+    while (c0[i] < INFINITY) {
         if (point < bd[i+1]) break;
         ++i;
     } // TODO: use some binary search
@@ -101,7 +101,7 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         x_original = particles[i]->x;
         y_original = particles[i]->y;
         v_x_i = particles[i]->vx;
-        v_y_i = particles[i]->vx;
+        v_y_i = particles[i]->vy;
 
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
         force_val = eval_interp1(force_interp, r);
@@ -118,14 +118,16 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
                 (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) + gravity[0] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
         v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) -
                 (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
+        // cout << x_original << "," << y_original << "," << gravity[0] << "," << gravity[1] << endl;
 
         particles[i]->vx = v_x_f;
         particles[i]->vy = v_y_f;
+
         x = x_original + v_x_f * (SDESOLVER_DT);
         y = y_original + v_y_f * (SDESOLVER_DT);
         if (x > 0.08 || x < -0.08 || y > 0.08 || y < -0.08) {
-            cout << "A particle has left the bounds of the system!" << endl;
-            cout << "Acceleration: " << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
+            //cout << "A particle has left the bounds of the system!" << endl;
+            //cout << "Acceleration: " << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
             particles[i]->vx = 0;
             particles[i]->vy = 0;
         } else {
@@ -148,6 +150,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             exit(1);
         }
     }
+
     float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
     for (int t = 0; t < SDESOLVER_N; ++t) {
         base.clear();
@@ -164,16 +167,21 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             thread.join();
         }
 
-        if (t % 1000 == 0) {
+        if (t % 1 == 0) {
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
 
             ofstream outfile;
             outfile.open("final_positions" + to_string(t) + ".csv");
+
+            // base.get_particles();
+
             for (int i = 0; i < SDESOLVER_PARTICLES; ++i) {
                 outfile << particles[i]->x << "," << particles[i]->y << endl;
             }
 
             outfile.close();
+        } else {
+            cout << "step " << t << endl;
         }
     }
     return particles;
@@ -186,12 +194,12 @@ struct arrsize{
 
 struct arrsize* readforce(char* filename){ // double**
     FILE* f = fopen(filename, "r");
-    unsigned nlines = 0,i;
+    unsigned nlines = 0, i;
     char c;
     long double **forcedata;
     forcedata = (long double**) malloc(2*sizeof(long double *));
     for (c = getc(f); c != EOF; c = getc(f)){
-        if(c == '\n') ++nlines;
+        if (c == '\n') ++nlines;
     }
 
     if (c != '\n') ++nlines;
@@ -200,7 +208,7 @@ struct arrsize* readforce(char* filename){ // double**
     forcedata[0] = (long double*) malloc((nlines+1)*sizeof(long double));
     forcedata[1] = (long double*) malloc((nlines+1)*sizeof(long double));
 
-    for(i = 0; i < nlines; ++i){
+    for(i = 0; i < nlines; ++i) {
         fscanf(f,"%Lf,%Lf",&forcedata[0][i],&forcedata[1][i]);
     }
 
@@ -218,14 +226,18 @@ long double** gen_lin_interp(long double **data,unsigned n){
     coeff[0] = (long double*) malloc(n*sizeof(long double)); // b
     coeff[1] = (long double*) malloc(n*sizeof(long double)); // a (bx+a linear interp)
     coeff[2] = (long double*) malloc(n*sizeof(long double)); // the boundary
-    for(i=0;i<n-1;++i)
-        coeff[1][i]=(y[i+1]-y[i])/(x[i+1]-x[i]);
-    for(i=0;i<n-1;++i)
-        coeff[0][i]=y[i+1]-coeff[1][i]*x[i+1];
-    for(i=0;i<n;++i)
-        coeff[2][i]=x[i];
-    coeff[0][n-1]=0;
-    coeff[1][n-1]=0;
+
+    for (i = 0; i < n - 1; ++i)
+        coeff[1][i] = (y[i + 1] - y[i]) / (x[i + 1] - x[i]);
+
+    for (i = 0; i < n - 1; ++i)
+        coeff[0][i] = y[i + 1] - coeff[1][i] * x[i + 1];
+
+    for (i = 0; i < n; ++i)
+        coeff[2][i] = x[i];
+
+    coeff[0][n - 1] = 0;
+    coeff[1][n - 1] = 0;
     //for(i=0;i<n;++i)printf("%d: %.9e,%.9e,%.9e\n",i,coeff[0][i],coeff[1][i],coeff[2][i]);
     return coeff;
 }
