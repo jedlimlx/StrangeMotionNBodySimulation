@@ -48,7 +48,7 @@ int generate_initial_positions(const double initial_data[], long double* positio
 
     long double r, theta, x, y;
     int index;
-    for (int i = 0; i < SDESOLVER_PARTICLES; i++){
+    for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         index = index_distribution(generator);
         r = initial_data[index];
 
@@ -56,19 +56,20 @@ int generate_initial_positions(const double initial_data[], long double* positio
         x = r * cos(theta);
         y = r * sin(theta);
 
-        while (mesh[1500 + ((int) (x / SDESOLVER_RADIUS))][1500 + ((int) (y / SDESOLVER_RADIUS))]) {
+        while (mesh[6000 + ((int) (x / SDESOLVER_RADIUS))][6000 + ((int) (y / SDESOLVER_RADIUS))]) {
             theta = angle_distribution(generator);
             x = r * cos(theta);
             y = r * sin(theta);
         }
 
-        if (isnan(x) || isnan(y)){
+        if (isnan(x) || isnan(y)) {
             cout << "test" << endl;
         }
 
         positions[i][0] = x;
         positions[i][1] = y;
     }
+
     return 0;
 }
 
@@ -80,7 +81,7 @@ long double get_random(){
 }
 
 long double eval_interp1(long double **interp, long double point){
-    long double *c0 = interp[0], *c1 = interp[1], *bd = interp[2];
+    long double *c0 = interp[1], *c1 = interp[0], *bd = interp[2];
     unsigned i = 0;
     while (c0[i] < INFINITY) {
         if (point < bd[i+1]) break;
@@ -92,12 +93,13 @@ long double eval_interp1(long double **interp, long double point){
 }
 
 //split up the loop for sde solving
-void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base){
+void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base) {
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y, *gravity;
     gravity = (long double*) malloc(2 * sizeof(long double));
     for (int i = start; i < end; ++i) {
         gravity[0] = 0;
         gravity[1] = 0;
+
         x_original = particles[i]->x;
         y_original = particles[i]->y;
         v_x_i = particles[i]->vx;
@@ -106,17 +108,21 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         r = sqrt(pow(x_original, 2) + pow(y_original, 2));
         force_val = eval_interp1(force_interp, r);
 
-        if (isnan(force_val)){
-            cout << "jed" << endl;
+        if (isnan(force_val)) {
+            cout << "jed " << r << endl;
             exit(1);
         }
 
         rand_x = get_random();
         rand_y = get_random();
         base.calculate_force(particles[i], gravity);
-        v_x_f = v_x_i + (force_val * (x_original / r) * (SDESOLVER_DT) -
+
+        // cout << force_val * (x_original / r) << " " << force_val * (y_original / r) << " "
+        // << gravity[0] << " " << gravity[1] << " " << endl;
+
+        v_x_f = v_x_i + (force_val * (x_original / r) * (SDESOLVER_DT) - //+ rand_x -
                 (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) + gravity[0] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
-        v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) -
+        v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) - //+ rand_y -
                 (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
         // cout << x_original << "," << y_original << "," << gravity[0] << "," << gravity[1] << endl;
 
@@ -125,11 +131,14 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 
         x = x_original + v_x_f * (SDESOLVER_DT);
         y = y_original + v_y_f * (SDESOLVER_DT);
-        if (x > 0.08 || x < -0.08 || y > 0.08 || y < -0.08) {
+        if (sqrt(pow(x, 2) + pow(y, 2)) > 0.08) {
             //cout << "A particle has left the bounds of the system!" << endl;
             //cout << "Acceleration: " << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
             particles[i]->vx = 0;
             particles[i]->vy = 0;
+
+            particles[i]->x = 0.079 / sqrt(pow(x, 2) + pow(y, 2)) * x;
+            particles[i]->y = 0.079 / sqrt(pow(x, 2) + pow(y, 2)) * y;
         } else {
             particles[i]->x = x;
             particles[i]->y = y;
@@ -143,9 +152,10 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
 
     TreeNode base(-0.1, -0.1, 0.2, interp, 0, 0);
     struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+
     for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
-        if (isnan(particles[i] -> x)){
+        if (isnan(particles[i] -> x)) {
             cout << i << endl;
             exit(1);
         }
@@ -167,6 +177,8 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             thread.join();
         }
 
+        base.resolve_collisions();
+
         if (t % 1 == 0) {
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
 
@@ -184,15 +196,16 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             cout << "step " << t << endl;
         }
     }
+
     return particles;
 }
 
-struct arrsize{
+struct arrsize {
     void *a;
     unsigned n;
 };
 
-struct arrsize* readforce(char* filename){ // double**
+struct arrsize* readforce(char* filename) { // double**
     FILE* f = fopen(filename, "r");
     unsigned nlines = 0, i;
     char c;

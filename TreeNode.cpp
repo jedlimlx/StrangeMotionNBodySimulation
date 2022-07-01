@@ -1,7 +1,10 @@
 #include "TreeNode.h"
 #include <iostream>
 #include <math.h>
+#include <unordered_set>
+
 long double eval_interp(long double **interp, long double point);
+void resolve_collisions_array(std::vector<particle*> particles);
 
 //using namespace std;
 TreeNode::TreeNode(long double x_start, long double y_start, long double size, long double** interp, int layer, int printLayers) {
@@ -111,15 +114,18 @@ void TreeNode::clear() {
 }
 
 void TreeNode::resolve_collisions() {
+    if (n_particles <= 1) return;
+
     // resolve collisions
-    if (size > 3.5 * SDESOLVER_RADIUS && !stop) {
+    if (size > 4 * SDESOLVER_RADIUS && !stop) {
         for (int i = 0; i < 4; i++) {
             children[i].resolve_collisions();
         }
     } else {
-        long double vx_ave = 0;
-        long double vy_ave = 0;
-        if (size < (3 * SDESOLVER_RADIUS)) {
+        if (size < 4 * SDESOLVER_RADIUS) {
+            // std::cout << "resolving collisions..." << std::endl;
+
+            /*
             for (int i = 0; i < n_particles; i++) {
                 vx_ave += particles[i] -> vx;
                 vy_ave += particles[i] -> vy;
@@ -129,6 +135,9 @@ void TreeNode::resolve_collisions() {
                 particles[i] -> vx = vx_ave / n_particles;
                 particles[i] -> vy = vy_ave / n_particles;
             }
+            */
+
+            resolve_collisions_array(particles);
         }
     }
 }
@@ -146,9 +155,9 @@ void TreeNode::get_particles() {
     }
 }
 
-#define MAX_VALUE (-0.000123193)
+#define MAX_VALUE (0)
 long double eval_interp(long double **interp, long double point) {
-    if (point < 0.001) return MAX_VALUE;
+    if (point < 0.0001) return MAX_VALUE;
 
     unsigned i = 0;
     long double *c0 = interp[1], *c1 = interp[0], *bd = interp[2];
@@ -159,6 +168,64 @@ long double eval_interp(long double **interp, long double point) {
 
     if (c0[i] == 0) --i;
     return c0[i] + c1[i] * point;
+}
+
+void resolve_collisions_array(std::vector<particle*> particles) {
+    int i, j, k;
+    long double max_v = 0, v;
+    for (i = 0; i < particles.size(); i++) {
+        v = pow(particles[i]->vx, 2) + pow(particles[i]->vy, 2);
+        if (max_v < v) max_v = v;
+    }
+
+    int num_sub_timesteps = sqrt(max_v) * SDESOLVER_DT / (SDESOLVER_COLLISION_TOLERANCE * SDESOLVER_RADIUS);
+    if (num_sub_timesteps > 1) {
+        for (i = 0; i < particles.size(); i++) {
+            particles[i]->x -= particles[i]->vx * SDESOLVER_DT;
+            particles[i]->y -= particles[i]->vy * SDESOLVER_DT;
+        }
+
+        for (i = 0; i < num_sub_timesteps; i++) {
+            for (j = 0; j < particles.size(); j++) {
+                for (k = 0; k < particles.size(); k++) {
+                    if (j > k) continue;
+                    if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y, 2) <= pow(SDESOLVER_RADIUS, 2)) {
+                        particles[j]->vx = (particles[j]->vx + particles[k]->vx) / 2;
+                        particles[j]->vy = (particles[j]->vy + particles[k]->vy) / 2;
+
+                        particles[k]->vx = particles[j]->vx;
+                        particles[k]->vy = particles[j]->vy;
+                    }
+                }
+            }
+
+            for (j = 0; j < particles.size(); j++) {
+                particles[j]->x += particles[j]->vx * SDESOLVER_DT / num_sub_timesteps;
+                particles[j]->y += particles[j]->vy * SDESOLVER_DT / num_sub_timesteps;
+            }
+        }
+    }
+
+    // Collision detection one last time
+    for (j = 0; j < particles.size(); j++) {
+        for (k = 0; k < particles.size(); k++) {
+            if (j > k) continue;
+            if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y, 2) <= pow(SDESOLVER_RADIUS, 2)) {
+                particles[j]->vx = (particles[j]->vx + particles[k]->vx) / 2;
+                particles[j]->vy = (particles[j]->vy + particles[k]->vy) / 2;
+
+                particles[k]->vx = particles[j]->vx;
+                particles[k]->vy = particles[j]->vy;
+            }
+        }
+    }
+
+    for (i = 0; i < particles.size(); i++) {
+        if (isnan(particles[i]->x)) {
+            std::cout << "velocity" << particles[i]->vx << " " << particles[i]->vy << std::endl;
+            std::cout << "weeeeee " << num_sub_timesteps << std::endl;
+        }
+    }
 }
 
 particle::particle(long double x, long double y) {
