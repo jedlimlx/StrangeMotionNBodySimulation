@@ -3,11 +3,11 @@
 
 #define SDESOLVER_FORCE_DATA_FILENAME "forcedata.csv" // coefficients for force polynomial
 #define SDESOLVER_TERMS  26 // number of terms in force polynomial
-#define SDESOLVER_INITIAL_DATA_LENGTH  100000 // number of initial r values
+#define SDESOLVER_INITIAL_DATA_LENGTH  1000000 // number of initial r values
 #define SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" // initial r values
 #define SDESOLVER_PARTICLES  10000  // number of particles to simulate
 #define SDESOLVER_MESH_FINENESS  12000 // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
-#define SDESOLVER_N  500000  // number of timesteps
+#define SDESOLVER_N 800000  // number of timesteps
 #define SDESOLVER_COLLISION_TOLERANCE 0.1  // smaller is more accurate collision detection
 #define SDESOLVER_N_THREADS  7
 
@@ -19,6 +19,7 @@
 #define SDESOLVER_TEMPERATURE  (25 + 273.15) // temperature
 #define SDESOLVER_KB  (1.38064852e-23) // boltzmann's #defineant
 #define SDESOLVER_RANDOM_COEFFICIENT  (sqrt(2 * SDESOLVER_KB * SDESOLVER_TEMPERATURE / SDESOLVER_CD)) //coefficient in front of the dW term
+#define SDESOLVER_CONTAINER_RADIUS 0.0925 // radius of the container
 #define SDESOLVER_T_START  0.0
 #define SDESOLVER_T_END  1000.0
 #define SDESOLVER_CAPL_LENGTH 368.3751861591355

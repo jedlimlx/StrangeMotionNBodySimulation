@@ -17,6 +17,8 @@ struct particle{
     long double vy;
     long double ax;
     long double ay;
+    long double vx2;
+    long double vy2;
     particle(long double, long double);
 };
 

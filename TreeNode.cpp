@@ -236,4 +236,7 @@ particle::particle(long double x, long double y) {
     vy = 0;
     ax = 0;
     ay = 0;
+
+    vx2 = 0;
+    vy2 = 0;
 }

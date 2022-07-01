@@ -10,7 +10,7 @@
 using namespace std;
 
 // polynomial for the force
-long double force(long double r, const long double coeffs[]){
+long double force(long double r, const long double coeffs[]) {
     long double sum = 0;
     for (int i = 0; i < SDESOLVER_TERMS; i++){
         sum += coeffs[i] * pow(r, i);
@@ -19,7 +19,7 @@ long double force(long double r, const long double coeffs[]){
 }
 
 // reads in the initial positions
-int import_initial_data(double positions[]){
+int import_initial_data(double positions[]) {
     ifstream infile;
     infile.open(SDESOLVER_INITIAL_DATA_FILENAME);
 
@@ -41,7 +41,7 @@ int import_initial_data(double positions[]){
 }
 
 // initialize positions of particles
-int generate_initial_positions(const double initial_data[], long double* positions[], bool**mesh){
+int generate_initial_positions(const double initial_data[], long double* positions[], bool**mesh) {
     default_random_engine generator(time(NULL));
     uniform_real_distribution<long double> angle_distribution(0, 2 * M_PI);
     uniform_int_distribution<int> index_distribution(0,  SDESOLVER_INITIAL_DATA_LENGTH - 1);
@@ -92,9 +92,10 @@ long double eval_interp1(long double **interp, long double point){
     return c0[i] + c1[i] * point;
 }
 
-//split up the loop for sde solving
-void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp, TreeNode base) {
-    long double x_original, y_original, x, y, v_x_i, v_y_i, r, v_x_f, v_y_f, force_val, rand_x, rand_y, *gravity;
+// split up the loop for sde solving
+void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp,
+        TreeNode base, struct particle** k, long double** memo_gravity, int stage) {
+    long double x_original, y_original, x, y, v_x_i, v_y_i, r, ax, ay, force_val, rand_x, rand_y, *gravity;
     gravity = (long double*) malloc(2 * sizeof(long double));
     for (int i = start; i < end; ++i) {
         gravity[0] = 0;
@@ -113,32 +114,46 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
             exit(1);
         }
 
-        rand_x = get_random();
-        rand_y = get_random();
-        base.calculate_force(particles[i], gravity);
+        if (stage == 0) base.calculate_force(particles[i], gravity);
+        else {
+            memo_gravity[i][0] = gravity[0];
+            memo_gravity[i][1] = gravity[1];
+        }
 
         // cout << force_val * (x_original / r) << " " << force_val * (y_original / r) << " "
         // << gravity[0] << " " << gravity[1] << " " << endl;
 
-        v_x_f = v_x_i + (force_val * (x_original / r) * (SDESOLVER_DT) - //+ rand_x -
-                (SDESOLVER_CD) * v_x_i * (SDESOLVER_DT) + gravity[0] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
-        v_y_f = v_y_i + (force_val * (y_original / r) * (SDESOLVER_DT) - //+ rand_y -
-                (SDESOLVER_CD) * v_y_i * (SDESOLVER_DT) + gravity[1] * (SDESOLVER_DT)) / (SDESOLVER_MASS);
-        // cout << x_original << "," << y_original << "," << gravity[0] << "," << gravity[1] << endl;
+        ax = force_val * (x_original / r) - (SDESOLVER_CD) * v_x_i + gravity[0];
+        ay = force_val * (y_original / r) - (SDESOLVER_CD) * v_y_i + gravity[1];
 
-        particles[i]->vx = v_x_f;
-        particles[i]->vy = v_y_f;
+        // Updating things in k
+        k[i]->vx = v_x_i;
+        k[i]->vy = v_y_i;
+        k[i]->ax = ax / SDESOLVER_MASS;
+        k[i]->ay = ay / SDESOLVER_MASS;
 
-        x = x_original + v_x_f * (SDESOLVER_DT);
-        y = y_original + v_y_f * (SDESOLVER_DT);
-        if (sqrt(pow(x, 2) + pow(y, 2)) > 0.08) {
-            //cout << "A particle has left the bounds of the system!" << endl;
-            //cout << "Acceleration: " << SDESOLVER_CD * SDESOLVER_DT / SDESOLVER_MASS << endl;
+        // Updating for the next time-step
+        if (stage == 0 || stage == 1) {   // Preparing for k1 -> k2 / k2 -> k3
+            particles[i]->vx = v_x_i + k[i]->ax * SDESOLVER_DT / 2;
+            particles[i]->vy = v_y_i + k[i]->ay * SDESOLVER_DT / 2;
+
+            x = x_original + k[i]->vx * (SDESOLVER_DT) / 2;
+            y = y_original + k[i]->vy * (SDESOLVER_DT) / 2;
+        } else if (stage == 2) {  // Preparing for k3 -> k4
+            particles[i]->vx = v_x_i + k[i]->ax * SDESOLVER_DT;
+            particles[i]->vy = v_y_i + k[i]->ay * SDESOLVER_DT;
+
+            x = x_original + k[i]->vx * (SDESOLVER_DT);
+            y = y_original + k[i]->vy * (SDESOLVER_DT);
+        }
+
+        // Check if the particle hit the side of the bowl
+        if (sqrt(pow(x, 2) + pow(y, 2)) > SDESOLVER_CONTAINER_RADIUS) {
             particles[i]->vx = 0;
             particles[i]->vy = 0;
 
-            particles[i]->x = 0.079 / sqrt(pow(x, 2) + pow(y, 2)) * x;
-            particles[i]->y = 0.079 / sqrt(pow(x, 2) + pow(y, 2)) * y;
+            particles[i]->x = (SDESOLVER_CONTAINER_RADIUS - 0.001) / sqrt(pow(x, 2) + pow(y, 2)) * x;
+            particles[i]->y = (SDESOLVER_CONTAINER_RADIUS - 0.001) / sqrt(pow(x, 2) + pow(y, 2)) * y;
         } else {
             particles[i]->x = x;
             particles[i]->y = y;
@@ -146,35 +161,78 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
     }
 }
 
-//euler's method
-struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp){
+// 5th order runge-kutta method
+struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp) {
     auto start = chrono::high_resolution_clock::now();
 
     TreeNode base(-0.1, -0.1, 0.2, interp, 0, 0);
-    struct particle **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+
+    // Stores their original positions
+    auto **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+
+    // Stores their "newer" positions (temporary)
+    auto **particles2 = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+
+    // runge-kutta constants
+    auto **k = (particle***) malloc(4 * SDESOLVER_PARTICLES * sizeof(particle**));
+    for (int i = 0; i < 5; i++) k[i] = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+
+    // memorise the strength of gravity
+    long double** memo_gravity;
+    memo_gravity = (long double**) malloc(SDESOLVER_PARTICLES * sizeof(long double *));
+    for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
+        memo_gravity[i] = (long double*) malloc(2*sizeof(long double));
+        memo_gravity[i][0] = 0;
+        memo_gravity[i][1] = 0;
+    }
 
     for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
+
+        for (int j = 0; j < 4; j++)
+            k[j][i] = new struct particle(0, 0);
+
         if (isnan(particles[i] -> x)) {
             cout << i << endl;
             exit(1);
         }
     }
 
-    float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; //number of particles for each thread to process
+    float length = ((float) SDESOLVER_PARTICLES) / SDESOLVER_N_THREADS; // number of particles for each thread to process
     for (int t = 0; t < SDESOLVER_N; ++t) {
         base.clear();
         for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
             base.insert_particle(particles[i]);
+
+            // Making deep copy of particles
+            particles2[i] = new struct particle(particles[i]->x, particles[i]->y);
+            particles2[i]->vx = particles[i]->vx;
+            particles2[i]->vy = particles[i]->vy;
         }
 
-        thread threads[SDESOLVER_N_THREADS];
-        for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
-            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles, force_interp, base);
+        // Runge-kutta stages
+        for (int j = 0; j < 4; j++) {
+            thread threads[SDESOLVER_N_THREADS];
+            for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
+                threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles2, force_interp,
+                                    base, k[j], memo_gravity, j);
+            }
+
+            for (auto &thread: threads) {
+                thread.join();
+            }
         }
 
-        for (auto &thread: threads) {
-            thread.join();
+        // Update everything :D
+        for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
+            particles[i]->vx += 1.0/6 * (k[0][i]->ax + 2 * k[1][i]->ax + 2 * k[2][i]->ax + k[3][i]->ax) * SDESOLVER_DT;
+            particles[i]->vy += 1.0/6 * (k[0][i]->ay + 2 * k[1][i]->ay + 2 * k[2][i]->ay + k[3][i]->ay) * SDESOLVER_DT;
+
+            // particles[i]->vx2 = 1.0/6 * (k1[i]->vx + 2 * k2[i]->vx + 2 * k3[i]->vx + k4[i]->vx);
+            // particles[i]->vy2 = 1.0/6 * (k1[i]->vy + 2 * k2[i]->vy + 2 * k3[i]->vy + k4[i]->vy);
+
+            particles[i]->x += 1.0/6 * (k[0][i]->vx + 2 * k[1][i]->vx + 2 * k[2][i]->vx + k[3][i]->vx) * SDESOLVER_DT;
+            particles[i]->y += 1.0/6 * (k[0][i]->vy + 2 * k[1][i]->vy + 2 * k[2][i]->vy + k[3][i]->vy) * SDESOLVER_DT;
         }
 
         base.resolve_collisions();
