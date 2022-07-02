@@ -94,7 +94,7 @@ long double eval_interp1(long double **interp, long double point){
 
 // split up the loop for sde solving
 void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp,
-        TreeNode base, struct particle** k, long double** memo_gravity, int stage) {
+        TreeNode base, struct particle*** k, long double** memo_gravity, int stage) {
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, ax, ay, force_val, rand_x, rand_y, *gravity;
     gravity = (long double*) malloc(2 * sizeof(long double));
     for (int i = start; i < end; ++i) {
@@ -127,28 +127,34 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         ay = force_val * (y_original / r) - (SDESOLVER_CD) * v_y_i + gravity[1];
 
         // Updating things in k
-        k[i]->vx = v_x_i;
-        k[i]->vy = v_y_i;
-        k[i]->ax = ax / SDESOLVER_MASS;
-        k[i]->ay = ay / SDESOLVER_MASS;
+        k[stage][i]->vx = v_x_i;
+        k[stage][i]->vy = v_y_i;
+        k[stage][i]->ax = ax / SDESOLVER_MASS;
+        k[stage][i]->ay = ay / SDESOLVER_MASS;
 
         // Updating for the next time-step
-        if (stage == 0 || stage == 1) {   // Preparing for k1 -> k2 / k2 -> k3
-            particles[i]->vx = v_x_i + k[i]->ax * SDESOLVER_DT / 2;
-            particles[i]->vy = v_y_i + k[i]->ay * SDESOLVER_DT / 2;
+        if (stage < SDESOLVER_RK_STAGES - 1) {
+            particles[i]->vx = v_x_i;
+            for (int j = 0; j < stage + 1; j++)
+                particles[i]->vx += COEFFICIENTS[stage][j] * k[j][i]->ax * SDESOLVER_DT;
 
-            x = x_original + k[i]->vx * (SDESOLVER_DT) / 2;
-            y = y_original + k[i]->vy * (SDESOLVER_DT) / 2;
-        } else if (stage == 2) {  // Preparing for k3 -> k4
-            particles[i]->vx = v_x_i + k[i]->ax * SDESOLVER_DT;
-            particles[i]->vy = v_y_i + k[i]->ay * SDESOLVER_DT;
+            particles[i]->vy = v_y_i;
+            for (int j = 0; j < stage + 1; j++)
+                particles[i]->vy += COEFFICIENTS[stage][j] * k[j][i]->ay * SDESOLVER_DT;
 
-            x = x_original + k[i]->vx * (SDESOLVER_DT);
-            y = y_original + k[i]->vy * (SDESOLVER_DT);
+            x = x_original;
+            for (int j = 0; j < stage + 1; j++)
+                x += COEFFICIENTS[stage][j] * k[j][i]->vx * SDESOLVER_DT;
+
+            y = y_original;
+            for (int j = 0; j < stage + 1; j++)
+                y += COEFFICIENTS[stage][j] * k[j][i]->vy * SDESOLVER_DT;
         }
 
         // Check if the particle hit the side of the bowl
         if (sqrt(pow(x, 2) + pow(y, 2)) > SDESOLVER_CONTAINER_RADIUS) {
+            cout << "died" << endl;
+
             particles[i]->vx = 0;
             particles[i]->vy = 0;
 
@@ -161,7 +167,7 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
     }
 }
 
-// 5th order runge-kutta method
+// prince dormand method :DDD
 struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp) {
     auto start = chrono::high_resolution_clock::now();
 
@@ -174,8 +180,8 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
     auto **particles2 = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
 
     // runge-kutta constants
-    auto **k = (particle***) malloc(4 * SDESOLVER_PARTICLES * sizeof(particle**));
-    for (int i = 0; i < 5; i++) k[i] = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
+    auto **k = (particle***) malloc(SDESOLVER_RK_STAGES * SDESOLVER_PARTICLES * sizeof(particle**));
+    for (int i = 0; i < SDESOLVER_RK_STAGES; i++) k[i] = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
 
     // memorise the strength of gravity
     long double** memo_gravity;
@@ -189,7 +195,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
     for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
 
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
             k[j][i] = new struct particle(0, 0);
 
         if (isnan(particles[i] -> x)) {
@@ -211,11 +217,11 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
         }
 
         // Runge-kutta stages
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < SDESOLVER_RK_STAGES; j++) {
             thread threads[SDESOLVER_N_THREADS];
             for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
                 threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles2, force_interp,
-                                    base, k[j], memo_gravity, j);
+                                    base, k, memo_gravity, j);
             }
 
             for (auto &thread: threads) {
@@ -225,14 +231,20 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
 
         // Update everything :D
         for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
-            particles[i]->vx += 1.0/6 * (k[0][i]->ax + 2 * k[1][i]->ax + 2 * k[2][i]->ax + k[3][i]->ax) * SDESOLVER_DT;
-            particles[i]->vy += 1.0/6 * (k[0][i]->ay + 2 * k[1][i]->ay + 2 * k[2][i]->ay + k[3][i]->ay) * SDESOLVER_DT;
+            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
+                particles[i]->vx += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->ax * SDESOLVER_DT;
+
+            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
+                particles[i]->vy += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->ay * SDESOLVER_DT;
 
             // particles[i]->vx2 = 1.0/6 * (k1[i]->vx + 2 * k2[i]->vx + 2 * k3[i]->vx + k4[i]->vx);
             // particles[i]->vy2 = 1.0/6 * (k1[i]->vy + 2 * k2[i]->vy + 2 * k3[i]->vy + k4[i]->vy);
 
-            particles[i]->x += 1.0/6 * (k[0][i]->vx + 2 * k[1][i]->vx + 2 * k[2][i]->vx + k[3][i]->vx) * SDESOLVER_DT;
-            particles[i]->y += 1.0/6 * (k[0][i]->vy + 2 * k[1][i]->vy + 2 * k[2][i]->vy + k[3][i]->vy) * SDESOLVER_DT;
+            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
+                particles[i]->x += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->vx * SDESOLVER_DT;
+
+            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
+                particles[i]->y += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->vy * SDESOLVER_DT;
         }
 
         base.resolve_collisions();
