@@ -7,7 +7,7 @@
 #define SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" // initial r values
 #define SDESOLVER_PARTICLES  10000  // number of particles to simulate
 #define SDESOLVER_MESH_FINENESS  12000 // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
-#define SDESOLVER_N 10000000  // number of timesteps
+#define SDESOLVER_N 15000000  // number of timesteps
 #define SDESOLVER_COLLISION_TOLERANCE 0.1  // smaller is more accurate collision detection
 #define SDESOLVER_N_THREADS  7
 

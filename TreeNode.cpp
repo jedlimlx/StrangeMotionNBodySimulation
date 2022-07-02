@@ -189,7 +189,8 @@ void resolve_collisions_array(std::vector<particle*> particles) {
             for (j = 0; j < particles.size(); j++) {
                 for (k = 0; k < particles.size(); k++) {
                     if (j > k) continue;
-                    if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y, 2) <= pow(SDESOLVER_RADIUS, 2)) {
+                    if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
+                                                                        2) <= pow(SDESOLVER_RADIUS, 2)) {
                         particles[j]->vx = (particles[j]->vx + particles[k]->vx) / 2;
                         particles[j]->vy = (particles[j]->vy + particles[k]->vy) / 2;
 
