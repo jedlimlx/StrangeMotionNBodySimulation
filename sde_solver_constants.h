@@ -7,8 +7,8 @@
 #define SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" // initial r values
 #define SDESOLVER_PARTICLES  10000  // number of particles to simulate
 #define SDESOLVER_MESH_FINENESS  12000 // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
-#define SDESOLVER_N 15000000  // number of timesteps
-#define SDESOLVER_COLLISION_TOLERANCE 0.1  // smaller is more accurate collision detection
+#define SDESOLVER_N 20000  // number of timesteps
+#define SDESOLVER_COLLISION_TOLERANCE 0.05  // smaller is more accurate collision detection
 #define SDESOLVER_N_THREADS  7
 
 #define SDESOLVER_VISCOSITY  (0.04) // dynamic viscosity of water
@@ -53,7 +53,7 @@ const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {
 };
  */
 
-
+/*
 #define SDESOLVER_RK_STAGES 6
 const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {
         {0.25},
@@ -63,6 +63,7 @@ const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {
         {-8.0 / 27.0, 2.0, -3544.0 / 2565.0, 1859.0 / 4104.0, -11.0 / 40.0},
         {16.0 / 135.0, 0.0, 6656.0 / 12825.0, 28561.0 / 56430.0, -9.0 / 50.0, 2.0 / 55.0},
 };
+*/
 
 /*
 #define SDESOLVER_RK_STAGES 3
@@ -92,5 +93,10 @@ const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {
         {1.0 / 8.0, 3.0 / 8.0, 3.0 / 8.0, 1.0 / 8.0}
 };
 */
+
+#define SDESOLVER_RK_STAGES 1
+const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {
+        {1}
+};
 
 #endif //SDESOLVER_SDE_SOLVER_CONSTANTS_H
