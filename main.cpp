@@ -310,7 +310,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
 
         base.resolve_collisions();
 
-        if (t % 1 == 0) {
+        if (t % SDESOLVER_EXPORT_FREQUENCY == 0) {
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
 
             ofstream outfile;
