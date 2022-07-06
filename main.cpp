@@ -107,7 +107,7 @@ long double eval_interp1(long double **interp, long double point) {
 
 // split up the loop for sde solving
 void loop_for_particles(int start, int end, struct particle** particles, long double** force_interp,
-        TreeNode base, struct particle*** k, long double** memo_gravity, int stage, bool recalculate_gravity) {
+        TreeNode base, long double** memo_gravity, bool recalculate_gravity) {
     long double x_original, y_original, x, y, v_x_i, v_y_i, r, ax, ay, force_val, *gravity, total_a, total_v, cd;
     gravity = (long double*) malloc(2 * sizeof(long double));
     for (int i = start; i < end; ++i) {
@@ -142,59 +142,28 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
         ax = force_val * (x_original / r) + gravity[0];
         ay = force_val * (y_original / r) + gravity[1];
 
-        // Updating things in k
-        k[stage][i]->vx = v_x_i;
-        k[stage][i]->vy = v_y_i;
-        k[stage][i]->ax = ax / SDESOLVER_MASS;
-        k[stage][i]->ay = ay / SDESOLVER_MASS;
-
         // Updating for the next time-step
         cd = SDESOLVER_CD / SDESOLVER_MASS;
-        if (true || stage < SDESOLVER_RK_STAGES - 1) {
-            // Update x-direction first
-            total_a = 0;
-            for (int j = 0; j < stage + 1; j++)
-                total_a += COEFFICIENTS[stage][j] * k[j][i]->ax;
 
-            total_v = 0;
-            for (int j = 0; j < stage + 1; j++)
-                total_v += COEFFICIENTS[stage][j] * k[j][i]->vx;
+        // Update x-direction first
+        total_a = ax / SDESOLVER_MASS;
+        total_v = v_x_i;
 
-            x = exp(-cd * SDESOLVER_DT) / pow(cd, 2) * (total_a -
-                    cd * total_v + exp(cd * SDESOLVER_DT) * (total_a *
-                    (cd * SDESOLVER_DT - 1) + cd * (total_v + cd * x_original)));
-            particles[i]->vx = exp(-cd * SDESOLVER_DT) / cd * (total_a *
-                    (exp(cd * SDESOLVER_DT) - 1) + cd * total_v);
+        x = exp(-cd * SDESOLVER_DT) / pow(cd, 2) * (total_a -
+                cd * total_v + exp(cd * SDESOLVER_DT) * (total_a *
+                (cd * SDESOLVER_DT - 1) + cd * (total_v + cd * x_original)));
+        particles[i]->vx = exp(-cd * SDESOLVER_DT) / cd * (total_a *
+                (exp(cd * SDESOLVER_DT) - 1) + cd * total_v);
 
-            // Update y-direction now
-            total_a = 0;
-            for (int j = 0; j < stage + 1; j++)
-                total_a += COEFFICIENTS[stage][j] * k[j][i]->ay;
+        // Update y-direction now
+        total_a = ay / SDESOLVER_MASS;
+        total_v = v_y_i;
 
-            total_v = 0;
-            for (int j = 0; j < stage + 1; j++)
-                total_v += COEFFICIENTS[stage][j] * k[j][i]->vy;
-
-            y = exp(-cd * SDESOLVER_DT) / pow(cd, 2) * (total_a -
-                    cd * total_v + exp(cd * SDESOLVER_DT) * (total_a *
-                    (cd * SDESOLVER_DT - 1) + cd * (total_v + cd * y_original)));
-            particles[i]->vy = exp(-cd * SDESOLVER_DT) / cd * (total_a *
-                    (exp(cd * SDESOLVER_DT) - 1) + cd * total_v);
-
-            /*
-            particles[i]->vy = v_y_i;
-            for (int j = 0; j < stage + 1; j++)
-                particles[i]->vy += COEFFICIENTS[stage][j] * k[j][i]->ay * SDESOLVER_DT;
-
-            x = x_original;
-            for (int j = 0; j < stage + 1; j++)
-                x += COEFFICIENTS[stage][j] * k[j][i]->vx * SDESOLVER_DT;
-
-            y = y_original;
-            for (int j = 0; j < stage + 1; j++)
-                y += COEFFICIENTS[stage][j] * k[j][i]->vy * SDESOLVER_DT;
-            */
-        }
+        y = exp(-cd * SDESOLVER_DT) / pow(cd, 2) * (total_a -
+                cd * total_v + exp(cd * SDESOLVER_DT) * (total_a *
+                (cd * SDESOLVER_DT - 1) + cd * (total_v + cd * y_original)));
+        particles[i]->vy = exp(-cd * SDESOLVER_DT) / cd * (total_a *
+                (exp(cd * SDESOLVER_DT) - 1) + cd * total_v);
 
         // Check if the particle hit the side of the bowl
         if (sqrt(pow(x, 2) + pow(y, 2)) > SDESOLVER_CONTAINER_RADIUS) {
@@ -212,7 +181,6 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
     free(gravity);
 }
 
-// prince dormand method :DDD
 struct particle** solve_sde(long double* positions[], long double** force_interp, long double** interp) {
     auto start = chrono::high_resolution_clock::now();
 
@@ -220,13 +188,6 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
 
     // Stores their original positions
     auto **particles = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
-
-    // Stores their "newer" positions (temporary)
-    auto **particles2 = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
-
-    // runge-kutta constants
-    auto **k = (particle***) malloc(SDESOLVER_RK_STAGES * SDESOLVER_PARTICLES * sizeof(particle**));
-    for (int i = 0; i < SDESOLVER_RK_STAGES; i++) k[i] = (particle**) malloc(SDESOLVER_PARTICLES * sizeof(struct particle*));
 
     // memorise the strength of gravity
     long double** memo_gravity;
@@ -240,9 +201,6 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
     for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         particles[i] = new struct particle(positions[i][0], positions[i][1]);
 
-        for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
-            k[j][i] = new struct particle(0, 0);
-
         if (isnan(particles[i] -> x)) {
             cout << i << endl;
             exit(1);
@@ -254,59 +212,27 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
         base.clear();
         for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
             base.insert_particle(particles[i]);
-
-            // Making deep copy of particles
-            particles2[i] = new struct particle(particles[i]->x, particles[i]->y);
-            particles2[i]->vx = particles[i]->vx;
-            particles2[i]->vy = particles[i]->vy;
         }
 
-        // Runge-kutta stages
         thread threads[SDESOLVER_N_THREADS];
-        for (int j = 0; j < SDESOLVER_RK_STAGES; j++) {
-            for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
-                threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles2, force_interp,
-                                    base, k, memo_gravity, j, j == 0 && t % 5 == 0);
-            }
+        for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
+            threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles, force_interp,
+                                base, memo_gravity, t % 5 == 0);
+        }
 
-            for (auto &thread: threads) {
-                thread.join();
-            }
+        for (auto &thread: threads) {
+            thread.join();
         }
 
         // Update everything :D
+        /*
         for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
-            /*
-            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
-                particles[i]->vx += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->ax * SDESOLVER_DT;
-
-            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
-                particles[i]->vy += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->ay * SDESOLVER_DT;
-
-            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
-                particles[i]->x += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->vx * SDESOLVER_DT;
-
-            for (int j = 0; j < SDESOLVER_RK_STAGES; j++)
-                particles[i]->y += COEFFICIENTS[SDESOLVER_RK_STAGES - 1][j] * k[j][i]->vy * SDESOLVER_DT;
-            */
-
             particles[i]->x = particles2[i]->x;
             particles[i]->y = particles2[i]->y;
             particles[i]->vx = particles2[i]->vx;
             particles[i]->vy = particles2[i]->vy;
-
-            /*
-            if (sqrt(pow(particles[i]->x, 2) + pow(particles[i]->y, 2)) > SDESOLVER_CONTAINER_RADIUS) {
-                particles[i]->vx = 0;
-                particles[i]->vy = 0;
-
-                particles[i]->x = (SDESOLVER_CONTAINER_RADIUS - 0.001) / sqrt(pow(particles[i]->x, 2) +
-                        pow(particles[i]->y, 2)) * particles[i]->x;
-                particles[i]->y = (SDESOLVER_CONTAINER_RADIUS - 0.001) / sqrt(pow(particles[i]->x, 2) +
-                        pow(particles[i]->y, 2)) * particles[i]->y;
-            }
-            */
         }
+        */
 
         base.resolve_collisions();
 

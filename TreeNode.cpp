@@ -217,20 +217,14 @@ void resolve_collisions_array(std::vector<particle*> particles) {
     for (j = 0; j < particles.size(); j++) {
         for (k = 0; k < particles.size(); k++) {
             if (j > k) continue;
-            if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y, 2) <= pow(SDESOLVER_RADIUS, 2)) {
+            if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y, 2) <= pow(
+                    SDESOLVER_RADIUS, 2)) {
                 particles[j]->vx = (particles[j]->vx + particles[k]->vx) / 2;
                 particles[j]->vy = (particles[j]->vy + particles[k]->vy) / 2;
 
                 particles[k]->vx = particles[j]->vx;
                 particles[k]->vy = particles[j]->vy;
             }
-        }
-    }
-
-    for (i = 0; i < particles.size(); i++) {
-        if (isnan(particles[i]->x)) {
-            std::cout << "velocity" << particles[i]->vx << " " << particles[i]->vy << std::endl;
-            std::cout << "weeeeee " << num_sub_timesteps << std::endl;
         }
     }
 }
@@ -243,7 +237,4 @@ particle::particle(long double x, long double y) {
     vy = 0;
     ax = 0;
     ay = 0;
-
-    vx2 = 0;
-    vy2 = 0;
 }
