@@ -1,3 +1,6 @@
-# Problem 12 - Strange Motion
+# Strange Motion
 
-:D
+To run the program, run
+```
+python3 main.py
+```

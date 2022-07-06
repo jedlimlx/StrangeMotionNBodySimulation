@@ -314,7 +314,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             cout << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start).count() << endl;
 
             ofstream outfile;
-            outfile.open("final_positions" + to_string(t) + ".csv");
+            outfile.open("output/final_positions" + to_string(t) + ".csv");
 
             // base.get_particles();
 

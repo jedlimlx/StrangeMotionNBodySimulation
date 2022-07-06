@@ -1,5 +1,6 @@
 import os
 import math
+import shutil
 
 INITIAL_DATA_LENGTH = 1000000  # number of initial r values
 INITIAL_DATA_FILENAME = "initial_data.csv"  # initial r values
@@ -11,7 +12,7 @@ N_THREADS = 7
 
 VISCOSITY = 0.04  # possibly fitted dynamic viscosity of water
 RADIUS = 5e-5  # radius of particle
-DENSITY = 2266  # density of particles
+DENSITY = 8940  # density of particles
 MASS = ((4.0/3) * DENSITY * math.pi * RADIUS ** 3)  # mass of the particle
 CD = (6 * math.pi * VISCOSITY * RADIUS)  # stokes drag
 
@@ -76,17 +77,27 @@ const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {{
 """)
 
 
-for n in range(5000, 10000, 5000):
-    print(f"Running with {n} particles...")
+overwrite = input("Would you like to overwrite the previous simulation output? [y/n] ")
+if overwrite == "y":
+    os.system("rm -r output")
+    os.system("mkdir output")
+    for n in range(5000, 100000+1, 5000):
+        print(f"Running with {n} particles...")
 
-    PARTICLES = n
-    write_constants()
+        PARTICLES = n
+        write_constants()
 
-    os.system("rm ./SDESolver")
-    os.system("cmake .")
-    os.system("make")
+        os.system("rm ./SDESolver")
+        os.system("cmake .")
+        os.system("make")
 
-    print("\nRunning program...")
-    os.system("./SDESolver")
+        print("\nRunning program...")
+        os.system("./SDESolver")
 
-    print("Done!\n")
+        print("\nShifting files...")
+        os.system(f"mkdir output/{n}_particles")
+        for file in os.listdir("./"):
+            if "final_position" not in file: continue
+            shutil.move(fr"{file}", fr"output/{n}_particles/{file}")
+
+        print("Done!\n")

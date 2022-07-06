@@ -13,8 +13,8 @@
 
 #define SDESOLVER_VISCOSITY  0.04 // dynamic viscosity of water
 #define SDESOLVER_RADIUS  5e-05 // radius of particle
-#define SDESOLVER_DENSITY  2266 // density of particles
-#define SDESOLVER_MASS  1.1864748255057453e-09
+#define SDESOLVER_DENSITY  8940 // density of particles
+#define SDESOLVER_MASS  4.680973053848793e-09
 #define SDESOLVER_CD  3.769911184307752e-05 // stokes drag
 
 #define SDESOLVER_TEMPERATURE  298.15 // temperature

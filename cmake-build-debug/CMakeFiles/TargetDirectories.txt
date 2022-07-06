@@ -1,3 +1,0 @@
-C:/Users/jedli/OneDrive - NUS High School/Documents/Physics/SYPT 2022/12. Strange Motion/nbody_sim/cmake-build-debug/CMakeFiles/SDESolver.dir
-C:/Users/jedli/OneDrive - NUS High School/Documents/Physics/SYPT 2022/12. Strange Motion/nbody_sim/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/jedli/OneDrive - NUS High School/Documents/Physics/SYPT 2022/12. Strange Motion/nbody_sim/cmake-build-debug/CMakeFiles/rebuild_cache.dir
