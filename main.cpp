@@ -213,7 +213,7 @@ void loop_for_particles(int start, int end, struct particle** particles, long do
 }
 
 // prince dormand method :DDD
-struct particle** solve_sde(long double* positions[], long double** force_interp , long double** interp) {
+struct particle** solve_sde(long double* positions[], long double** force_interp, long double** interp) {
     auto start = chrono::high_resolution_clock::now();
 
     TreeNode base(-0.1, -0.1, 0.2, interp, 0, 0);
@@ -266,7 +266,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             thread threads[SDESOLVER_N_THREADS];
             for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
                 threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles2, force_interp,
-                                    base, k, memo_gravity, j, j == 0);
+                                    base, k, memo_gravity, j, j == 0 && t % 5 == 0);
             }
 
             for (auto &thread: threads) {

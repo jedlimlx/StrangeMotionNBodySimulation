@@ -6,10 +6,10 @@
 #define SDESOLVER_INITIAL_DATA_LENGTH  1000000 // number of initial r values
 #define SDESOLVER_INITIAL_DATA_FILENAME  "initial_data.csv" // initial r values
 #define SDESOLVER_N  20000  // number of timesteps
-#define SDESOLVER_PARTICLES  200000  // number of particles to simulate
+#define SDESOLVER_PARTICLES  100000  // number of particles to simulate
 #define SDESOLVER_MESH_FINENESS  12000 // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 #define SDESOLVER_COLLISION_TOLERANCE 0.05  // smaller is more accurate collision detection
-#define SDESOLVER_N_THREADS  7
+#define SDESOLVER_N_THREADS  7  // the number of threads to use
 
 #define SDESOLVER_VISCOSITY  0.04 // dynamic viscosity of water
 #define SDESOLVER_RADIUS  5e-05 // radius of particle

@@ -1,6 +1,6 @@
 import os
 import math
-import shutil
+import threading
 
 INITIAL_DATA_LENGTH = 1000000  # number of initial r values
 INITIAL_DATA_FILENAME = "initial_data.csv"  # initial r values
@@ -10,7 +10,7 @@ DT = 0.05  # size of timesteps
 COLLISION_TOLERANCE = 0.05  # smaller is more accurate collision detection
 N_THREADS = 7
 
-VISCOSITY = 0.04  # possibly fitted dynamic viscosity of water
+VISCOSITY = 0.005  # possibly fitted dynamic viscosity of water
 RADIUS = 5e-5  # radius of particle
 DENSITY = 8940  # density of particles
 MASS = ((4.0/3) * DENSITY * math.pi * RADIUS ** 3)  # mass of the particle
@@ -77,12 +77,19 @@ const double COEFFICIENTS[][SDESOLVER_RK_STAGES] = {{
 """)
 
 
-overwrite = input("Would you like to overwrite the previous simulation output? [y/n] ")
-if overwrite == "y":
+def run_programs(folders):
+    for folder in folders:
+        print(f"Running solver in {folder}...")
+        os.system(f"cd output/{folder} && ./SDESolver")
+
+
+recompile = input("Would you like to recompile the files? [y/n] ")
+
+if recompile == "y":
     os.system("rm -r output")
     os.system("mkdir output")
     for n in range(5000, 100000+1, 5000):
-        print(f"Running with {n} particles...")
+        print(f"Compiling with {n} particles...")
 
         PARTICLES = n
         write_constants()
@@ -91,13 +98,18 @@ if overwrite == "y":
         os.system("cmake .")
         os.system("make")
 
-        print("\nRunning program...")
-        os.system("./SDESolver")
+        # print("\nRunning program...")
+        # os.system("./SDESolver")
 
-        print("\nShifting files...")
+        print("\nShifting exectuables + data files...")
         os.system(f"mkdir output/{n}_particles")
-        for file in os.listdir("./"):
-            if "final_position" not in file: continue
-            shutil.move(fr"{file}", fr"output/{n}_particles/{file}")
+        for file in ["SDESolver", "forcedata.csv", "initial_data.csv", "besselinterp.csv"]:
+            os.system(fr"cp {file} output/{n}_particles")
 
         print("Done!\n")
+
+# Now, run them (run 4 in parallel to use more CPU)
+threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(5000, 100000+1, 20000)])).start()
+threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(10000, 100000+1, 20000)])).start()
+threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(15000, 100000+1, 20000)])).start()
+threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(20000, 100000+1, 20000)])).start()
