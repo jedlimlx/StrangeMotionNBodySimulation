@@ -108,6 +108,12 @@ void TreeNode::calculate_force(particle* source, long double* force) {
 }
 
 void TreeNode::clear() {
+    if (!stop) {
+        for (int i = 0; i < 4; i++) {
+            children[i].clear();
+        }
+    }
+
     children.clear();
     particles.clear();
     n_particles = 0;

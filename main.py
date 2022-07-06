@@ -8,7 +8,7 @@ PARTICLES = 100000  # number of particles to simulate
 MESH_FINENESS = 12000  # dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 DT = 0.05  # size of timesteps
 COLLISION_TOLERANCE = 0.05  # smaller is more accurate collision detection
-N_THREADS = 7
+N_THREADS = 7  # number of threads
 
 VISCOSITY = 0.005  # possibly fitted dynamic viscosity of water
 RADIUS = 5e-5  # radius of particle
@@ -88,7 +88,7 @@ recompile = input("Would you like to recompile the files? [y/n] ")
 if recompile == "y":
     os.system("rm -r output")
     os.system("mkdir output")
-    for n in range(5000, 100000+1, 5000):
+    for n in range(5000, 120000+1, 5000):
         print(f"Compiling with {n} particles...")
 
         PARTICLES = n
@@ -106,10 +106,10 @@ if recompile == "y":
         for file in ["SDESolver", "forcedata.csv", "initial_data.csv", "besselinterp.csv"]:
             os.system(fr"cp {file} output/{n}_particles")
 
+        os.system(f"mkdir output/{n}_particles/output")
+
         print("Done!\n")
 
-# Now, run them (run 4 in parallel to use more CPU)
-threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(5000, 100000+1, 20000)])).start()
-threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(10000, 100000+1, 20000)])).start()
-threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(15000, 100000+1, 20000)])).start()
-threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range(20000, 100000+1, 20000)])).start()
+# Now, run them (run 14 in parallel to use more CPU, don't question)
+for i in range(14):
+    threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range((i + 1) * 5000, 120000+1, 5000 * 14)])).start()
