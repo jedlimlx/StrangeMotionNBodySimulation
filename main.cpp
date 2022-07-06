@@ -266,7 +266,7 @@ struct particle** solve_sde(long double* positions[], long double** force_interp
             thread threads[SDESOLVER_N_THREADS];
             for (int i = 0; i < SDESOLVER_N_THREADS; i++) {
                 threads[i] = thread(loop_for_particles, (i * length), ((i + 1) * length), particles2, force_interp,
-                                    base, k, memo_gravity, j, j == 0 && t % 5 == 0);
+                                    base, k, memo_gravity, j, j == 0);
             }
 
             for (auto &thread: threads) {

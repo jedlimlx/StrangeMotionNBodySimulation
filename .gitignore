@@ -1,3 +1,6 @@
 cmake-build-debug
 CMakeFiles
 output
+SDESolver
+CMakeCache.txt
+cmake_install.cmake

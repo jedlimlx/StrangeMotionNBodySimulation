@@ -44,7 +44,7 @@ def write_constants():
 #define SDESOLVER_PARTICLES  {PARTICLES}  // number of particles to simulate
 #define SDESOLVER_MESH_FINENESS  {MESH_FINENESS} // dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 #define SDESOLVER_COLLISION_TOLERANCE {COLLISION_TOLERANCE}  // smaller is more accurate collision detection
-#define SDESOLVER_N_THREADS  {N_THREADS}
+#define SDESOLVER_N_THREADS  {N_THREADS}  // the number of threads to use
 
 #define SDESOLVER_VISCOSITY  {VISCOSITY} // dynamic viscosity of water
 #define SDESOLVER_RADIUS  {RADIUS} // radius of particle
