@@ -4,15 +4,15 @@ import threading
 
 INITIAL_DATA_LENGTH = 1000000  # number of initial r values
 INITIAL_DATA_FILENAME = "initial_data.csv"  # initial r values
-PARTICLES = 100000  # number of particles to simulate
+PARTICLES = 90000  # number of particles to simulate
 MESH_FINENESS = 12000  # dimensions of mesh (MESH_FINENESS * MESH_FINENESS)
 DT = 0.05  # size of timesteps
 COLLISION_TOLERANCE = 0.05  # smaller is more accurate collision detection
 N_THREADS = 7  # number of threads
 
 VISCOSITY = 0.005  # possibly fitted dynamic viscosity of water
-RADIUS = 5e-5  # radius of particle
-DENSITY = 8940  # density of particles
+RADIUS = 4e-5  # radius of particle
+DENSITY = 2260  # density of particles
 MASS = ((4.0/3) * DENSITY * math.pi * RADIUS ** 3)  # mass of the particle
 CD = (6 * math.pi * VISCOSITY * RADIUS)  # stokes drag
 
@@ -26,7 +26,8 @@ T_START = 0.0
 T_END = 1000.0
 MAX_ANGLE = 0.5
 
-BESSELINTERP = "besselinterp.csv"
+BESSELINTERP = "cheeriosgraphite.csv"
+FORCE_DATA = "forcedata.csv"
 
 EXPORT_FREQUENCY = 20
 
@@ -36,7 +37,7 @@ def write_constants():
         file.write(f"""#ifndef SDESOLVER_SDE_SOLVER_CONSTANTS_H
 #define SDESOLVER_SDE_SOLVER_CONSTANTS_H
 
-#define SDESOLVER_FORCE_DATA_FILENAME "forcedata.csv" // coefficients for force polynomial
+#define SDESOLVER_FORCE_DATA_FILENAME "{FORCE_DATA}" // coefficients for force polynomial
 #define SDESOLVER_TERMS  26 // number of terms in force polynomial
 #define SDESOLVER_INITIAL_DATA_LENGTH  {INITIAL_DATA_LENGTH} // number of initial r values
 #define SDESOLVER_INITIAL_DATA_FILENAME  "{INITIAL_DATA_FILENAME}" // initial r values
@@ -88,10 +89,11 @@ recompile = input("Would you like to recompile the files? [y/n] ")
 if recompile == "y":
     os.system("rm -r output")
     os.system("mkdir output")
-    for n in range(5000, 120000+1, 5000):
-        print(f"Compiling with {n} particles...")
+    for n in range(1, 16, 1):
+        print(f"Compiling with {n}mm magnet height...")
 
-        PARTICLES = n
+        FORCE_DATA = f"forcegraphite{n}mm.csv"
+
         write_constants()
 
         os.system("rm ./SDESolver")
@@ -102,14 +104,14 @@ if recompile == "y":
         # os.system("./SDESolver")
 
         print("\nShifting exectuables + data files...")
-        os.system(f"mkdir output/{n}_particles")
-        for file in ["SDESolver", "forcedata.csv", "initial_data.csv", "besselinterp.csv"]:
-            os.system(fr"cp {file} output/{n}_particles")
+        os.system(f"mkdir output/{n}mm")
+        for file in ["SDESolver", FORCE_DATA, "initial_data.csv", BESSELINTERP]:
+            os.system(fr"cp {file} output/{n}mm")
 
-        os.system(f"mkdir output/{n}_particles/output")
+        os.system(f"mkdir output/{n}mm/output")
 
         print("Done!\n")
 
-# Now, run them (run 14 in parallel to use more CPU, don't question)
-for i in range(14):
-    threading.Thread(target=lambda: run_programs([f"{n}_particles" for n in range((i + 1) * 5000, 120000+1, 5000 * 14)])).start()
+# Now, run them (run 8 in parallel to use more CPU, don't question)
+for i in range(1, 16, 1):
+    threading.Thread(target=lambda: run_programs([f"{x}mm" for x in [i]])).start()
