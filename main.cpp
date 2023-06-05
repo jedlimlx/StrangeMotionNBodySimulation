@@ -50,7 +50,7 @@ int generate_initial_positions(const double initial_data[], long double* positio
     int index;
     for (int i = 0; i < SDESOLVER_PARTICLES; i++) {
         index = index_distribution(generator);
-        r = initial_data[index];
+        r = initial_data[index]/1.25;
 
         theta = angle_distribution(generator);
         x = r * cos(theta);

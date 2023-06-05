@@ -125,12 +125,12 @@ void TreeNode::resolve_collisions() {
     if (n_particles <= 1) return;
 
     // resolve collisions
-    if (size > 8 * SDESOLVER_RADIUS && !stop) {
+    if (size > 32 * SDESOLVER_RADIUS && !stop) {
         for (int i = 0; i < 4; i++) {
             children[i].resolve_collisions();
         }
     } else {
-        if (size < 8 * SDESOLVER_RADIUS) {
+        if (size < 32 * SDESOLVER_RADIUS) {
             // std::cout << "resolving collisions..." << std::endl;
 
             /*
@@ -188,7 +188,7 @@ void resolve_collisions_array(std::vector<particle*> particles) {
 
     std::vector<std::vector<int>> adj_list;
 
-    int num_sub_timesteps = sqrt(max_v) * SDESOLVER_DT / (SDESOLVER_COLLISION_TOLERANCE * SDESOLVER_RADIUS);
+    int num_sub_timesteps = SDESOLVER_COLLISION_TOLERANCE * max_v * SDESOLVER_DT / SDESOLVER_RADIUS;
     if (num_sub_timesteps > 1) {
         for (i = 0; i < particles.size(); i++) {
             particles[i]->x -= particles[i]->vx * SDESOLVER_DT;
@@ -203,7 +203,7 @@ void resolve_collisions_array(std::vector<particle*> particles) {
             // building adjacency list
             for (j = 0; j < particles.size(); j++) {
                 for (k = 0; k < particles.size(); k++) {
-                    if (j > k) continue;
+                    if (j >= k) continue;
                     if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
                                                                         2) <= pow(SDESOLVER_RADIUS, 2)) {
                         adj_list[j].push_back(k);
@@ -211,13 +211,50 @@ void resolve_collisions_array(std::vector<particle*> particles) {
 
                         collided = true;
                     }
+
+                    /*
+                    if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
+                                                                        2) <= pow(SDESOLVER_RADIUS + 1e-7, 2)) {
+                        adj_list[j].push_back(k);
+                        adj_list[k].push_back(j);
+
+                        long double vx_diff = particles[j]->vx - particles[k]->vx;
+                        long double vy_diff = particles[j]->vy - particles[k]->vy;
+                        long double x_diff = particles[j]->x - particles[k]->x;
+                        long double y_diff = particles[j]->y - particles[k]->y;
+
+                        if (vx_diff == 0 || vy_diff == 0) continue;
+
+                        collided = true;
+
+                        long double time1 = (-x_diff*vx_diff-y_diff*vy_diff
+                                            -pow(pow(SDESOLVER_RADIUS,2)*(pow(vx_diff,2)+pow(vy_diff,2))
+                                            -pow(vy_diff*x_diff-vx_diff*y_diff,2),0.5))/(pow(vx_diff,2)+pow(vy_diff,2));
+                        long double time2 = (-x_diff*vx_diff-y_diff*vy_diff
+                                            -pow(pow(SDESOLVER_RADIUS,2)*(pow(vx_diff,2)+pow(vy_diff,2))
+                                            +pow(vy_diff*x_diff-vx_diff*y_diff,2),0.5))/(pow(vx_diff,2)+pow(vy_diff,2));
+
+                        long double time;
+                        if (time1 > time2 && time1 < 0) time = time1;
+                        else if (time2 > time1 && time2 < 0) time = time2;
+                        else time = 0;
+
+                        if (time > SDESOLVER_DT) continue;
+
+                        particles[j]->x += particles[j]->vx * time;
+                        particles[j]->y += particles[j]->vy * time;
+
+                        particles[k]->x += particles[k]->vx * time;
+                        particles[k]->y += particles[k]->vy * time;
+                    }
+                     */
                 }
             }
 
             if (collided) {
                 // store velocity sums
-                int vx_sum = 0;
-                int vy_sum = 0;
+                long double vx_sum = 0;
+                long double vy_sum = 0;
 
                 // perform BFS
                 std::queue<int> queue;
@@ -227,6 +264,11 @@ void resolve_collisions_array(std::vector<particle*> particles) {
                 int updated[particles.size()] = { 0 };
                 for (j = 0; j < particles.size(); j++) {
                     if (updated[j] == 1) continue;
+
+                    if (adj_list[j].size() == 0) continue;
+
+                    vx_sum = 0;
+                    vy_sum = 0;
 
                     queue.push(j);
                     while (!queue.empty()) {
@@ -252,6 +294,7 @@ void resolve_collisions_array(std::vector<particle*> particles) {
                         lst[j]->vy = vy_sum / lst.size();
                     }
 
+
                     lst.clear();
                     visited.clear();
                 }
@@ -266,6 +309,119 @@ void resolve_collisions_array(std::vector<particle*> particles) {
                 particles[j]->x += particles[j]->vx * SDESOLVER_DT / num_sub_timesteps;
                 particles[j]->y += particles[j]->vy * SDESOLVER_DT / num_sub_timesteps;
             }
+        }
+
+        // collision detection one last time
+        collided = false;
+
+        // building adjacency list
+        for (j = 0; j < particles.size(); j++) {
+            for (k = 0; k < particles.size(); k++) {
+                if (j >= k) continue;
+                if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
+                                                                    2) <= pow(SDESOLVER_RADIUS, 2)) {
+                    adj_list[j].push_back(k);
+                    adj_list[k].push_back(j);
+
+                    collided = true;
+                }
+
+                /*
+                if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
+                                                                    2) <= pow(SDESOLVER_RADIUS + 1e-7, 2)) {
+                    adj_list[j].push_back(k);
+                    adj_list[k].push_back(j);
+
+                    long double vx_diff = particles[j]->vx - particles[k]->vx;
+                    long double vy_diff = particles[j]->vy - particles[k]->vy;
+                    long double x_diff = particles[j]->x - particles[k]->x;
+                    long double y_diff = particles[j]->y - particles[k]->y;
+
+                    if (vx_diff == 0 || vy_diff == 0) continue;
+
+                    collided = true;
+
+                    long double time1 = (-x_diff*vx_diff-y_diff*vy_diff
+                                        -pow(pow(SDESOLVER_RADIUS,2)*(pow(vx_diff,2)+pow(vy_diff,2))
+                                        -pow(vy_diff*x_diff-vx_diff*y_diff,2),0.5))/(pow(vx_diff,2)+pow(vy_diff,2));
+                    long double time2 = (-x_diff*vx_diff-y_diff*vy_diff
+                                        -pow(pow(SDESOLVER_RADIUS,2)*(pow(vx_diff,2)+pow(vy_diff,2))
+                                        +pow(vy_diff*x_diff-vx_diff*y_diff,2),0.5))/(pow(vx_diff,2)+pow(vy_diff,2));
+
+                    long double time;
+                    if (time1 > time2 && time1 < 0) time = time1;
+                    else if (time2 > time1 && time2 < 0) time = time2;
+                    else time = 0;
+
+                    if (time > SDESOLVER_DT) continue;
+
+                    particles[j]->x += particles[j]->vx * time;
+                    particles[j]->y += particles[j]->vy * time;
+
+                    particles[k]->x += particles[k]->vx * time;
+                    particles[k]->y += particles[k]->vy * time;
+                }
+                 */
+            }
+        }
+
+        if (collided) {
+            // store velocity sums
+            long double vx_sum = 0;
+            long double vy_sum = 0;
+
+            // perform BFS
+            std::queue<int> queue;
+            std::set<int> visited;
+            std::vector<particle*> lst;
+
+            int updated[particles.size()] = { 0 };
+            for (j = 0; j < particles.size(); j++) {
+                if (updated[j] == 1) continue;
+
+                if (adj_list[j].size() == 0) continue;
+
+                vx_sum = 0;
+                vy_sum = 0;
+
+                queue.push(j);
+                while (!queue.empty()) {
+                    int curr = queue.front();
+                    visited.insert(curr);
+                    queue.pop();
+
+                    for (k = 0; k < adj_list[curr].size(); k++) {
+                        if (visited.count(adj_list[curr][k]) == 0) {
+                            queue.push(adj_list[curr][k]);
+                        }
+                    }
+
+                    updated[curr] = 1;
+                    lst.push_back(particles[curr]);
+
+                    vx_sum += particles[curr]->vx;
+                    vy_sum += particles[curr]->vy;
+                }
+
+                for (j = 0; j < lst.size(); j++) {
+                    lst[j]->vx = vx_sum / lst.size();
+                    lst[j]->vy = vy_sum / lst.size();
+                }
+
+
+                lst.clear();
+                visited.clear();
+            }
+
+            for (j = 0; j < adj_list.size(); j++) {
+                adj_list[j].clear();
+            }
+        }
+
+        // perform timestep
+        for (j = 0; j < particles.size(); j++) {
+            particles[j]->x += particles[j]->vx * SDESOLVER_DT / num_sub_timesteps;
+            particles[j]->y += particles[j]->vy * SDESOLVER_DT / num_sub_timesteps;
         }
     }
 }
