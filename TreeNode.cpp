@@ -125,12 +125,12 @@ void TreeNode::resolve_collisions() {
     if (n_particles <= 1) return;
 
     // resolve collisions
-    if (size > 32 * SDESOLVER_RADIUS && !stop) {
+    if (size > 64 * SDESOLVER_RADIUS && !stop) {
         for (int i = 0; i < 4; i++) {
             children[i].resolve_collisions();
         }
     } else {
-        if (size < 32 * SDESOLVER_RADIUS) {
+        if (size < 64 * SDESOLVER_RADIUS) {
             // std::cout << "resolving collisions..." << std::endl;
 
             /*
@@ -167,15 +167,26 @@ void TreeNode::get_particles() {
 long double eval_interp(long double **interp, long double point) {
     if (point < 0.0001) return MAX_VALUE;
 
-    unsigned i = 0;
+    unsigned left = 0;
+    unsigned right = 1999; // todo insert correct number
+    unsigned middle = (left + right) / 2;
     long double *c0 = interp[1], *c1 = interp[0], *bd = interp[2];
-    while (c0[i] > 0) {
-        if (point < bd[i + 1]) break;
-        ++i;
-    } // TODO: use some binary search
 
-    if (c0[i] == 0) --i;
-    return c0[i] + c1[i] * point;
+    while (c0[middle] > 0 && left < right) {
+        // if (point < bd[i + 1]) break;
+        // ++i;
+        middle = (left + right) / 2;
+        if (point > bd[middle]) {
+            left = middle + 1;
+        } else if (point < bd[middle]) {
+            right = middle - 1;
+        }
+
+        // std::cout << middle << " " << bd[middle] << " " << point << std::endl;
+    }
+
+    // if (c0[middle] == 0) --middle;
+    return c0[middle] + c1[middle] * point;
 }
 
 void resolve_collisions_array(std::vector<particle*> particles) {
@@ -188,7 +199,7 @@ void resolve_collisions_array(std::vector<particle*> particles) {
 
     std::vector<std::vector<int>> adj_list;
 
-    int num_sub_timesteps = SDESOLVER_COLLISION_TOLERANCE * max_v * SDESOLVER_DT / SDESOLVER_RADIUS;
+    int num_sub_timesteps = SDESOLVER_COLLISION_TOLERANCE * sqrt(max_v) * SDESOLVER_DT / SDESOLVER_RADIUS;
     if (num_sub_timesteps > 1) {
         for (i = 0; i < particles.size(); i++) {
             particles[i]->x -= particles[i]->vx * SDESOLVER_DT;
@@ -205,7 +216,7 @@ void resolve_collisions_array(std::vector<particle*> particles) {
                 for (k = 0; k < particles.size(); k++) {
                     if (j >= k) continue;
                     if (pow(particles[j]->x - particles[k]->x, 2) + pow(particles[j]->y - particles[k]->y,
-                                                                        2) <= pow(SDESOLVER_RADIUS, 2)) {
+                                                                        2) <= pow(SDESOLVER_RADIUS + 1e-6, 2)) {
                         adj_list[j].push_back(k);
                         adj_list[k].push_back(j);
 
@@ -293,7 +304,6 @@ void resolve_collisions_array(std::vector<particle*> particles) {
                         lst[j]->vx = vx_sum / lst.size();
                         lst[j]->vy = vy_sum / lst.size();
                     }
-
 
                     lst.clear();
                     visited.clear();
